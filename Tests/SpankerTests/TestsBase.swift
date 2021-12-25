@@ -2,7 +2,7 @@ import XCTest
 import class Foundation.Bundle
 
 import Spanker
-
+/*
 func XCTAssertEqualAny(_ inFirst: Any?, _ inSecond: Any?) {
     guard let first = inFirst else { return XCTAssertTrue(inFirst == nil && inSecond == nil, "one of the arguments is nil") }
     guard let second = inSecond else { return XCTAssertTrue(false, "second argument is nil") }
@@ -37,7 +37,7 @@ func XCTAssertEqualAny(_ inFirst: Any?, _ inSecond: Any?) {
     XCTAssertEqual(String(data: firstData, encoding: .utf8),
                    String(data: secondData, encoding: .utf8))
 }
-
+*/
 
 public class TestsBase: XCTestCase {
     
