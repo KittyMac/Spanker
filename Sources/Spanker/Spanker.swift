@@ -3,22 +3,22 @@ import Hitch
 
 public extension Data {
     @inlinable @inline(__always)
-    func parse() -> Spanker.JsonElement? {
-        return Spanker.parse(data: self)
+    func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
+        Spanker.parsed(data: self, callback)
     }
 }
 
 public extension Hitch {
     @inlinable @inline(__always)
-    func parse() -> Spanker.JsonElement? {
-        return Spanker.parse(hitch: self)
+    func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
+        Spanker.parsed(hitch: self, callback)
     }
 }
 
 public extension String {
     @inlinable @inline(__always)
-    func parse() -> Spanker.JsonElement? {
-        return Spanker.parse(string: self)
+    func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
+        Spanker.parsed(string: self, callback)
     }
 }
 
@@ -34,7 +34,7 @@ public enum Spanker {
         case dictionary
     }
 
-    public class JsonElement: CustomStringConvertible {
+    public final class JsonElement: CustomStringConvertible {
 
         @discardableResult
         @inlinable @inline(__always)
@@ -127,12 +127,12 @@ public enum Spanker {
 
         public let type: JsonType
 
-        public var valueString: Hitch?
+        public var valueString: HalfHitch?
         public var valueBool: Bool?
         public var valueInt: Int?
         public var valueDouble: Double?
         public var valueArray: [JsonElement]?
-        public var keyArray: [Hitch]?
+        public var keyArray: [HalfHitch]?
 
         @inlinable @inline(__always)
         internal func append(value: JsonElement) {
@@ -140,7 +140,7 @@ public enum Spanker {
         }
 
         @inlinable @inline(__always)
-        internal func append(key: Hitch,
+        internal func append(key: HalfHitch,
                              value: JsonElement) {
             keyArray?.append(key)
             valueArray?.append(value)
@@ -159,7 +159,7 @@ public enum Spanker {
         }
 
         @inlinable @inline(__always)
-        init(string: Hitch) {
+        init(string: HalfHitch) {
             type = .string
 
             valueString = string
@@ -219,7 +219,7 @@ public enum Spanker {
         }
 
         @inlinable @inline(__always)
-        init(keys: [Hitch],
+        init(keys: [HalfHitch],
              values: [JsonElement]) {
             type = .dictionary
 
@@ -233,20 +233,18 @@ public enum Spanker {
     }
 
     @inlinable @inline(__always)
-    public static func parse(hitch: Hitch) -> JsonElement? {
-        let reader = Reader(hitch: hitch)
-
-        return reader.parse()
+    public static func parsed(hitch: Hitch, _ callback: (JsonElement?) -> Void) {
+        Reader.parsed(hitch: hitch, callback)
     }
 
     @inlinable @inline(__always)
-    public static func parse(data: Data) -> JsonElement? {
-        return parse(hitch: Hitch(data: data))
+    public static func parsed(data: Data, _ callback: (JsonElement?) -> Void) {
+        Reader.parsed(data: data, callback)
     }
 
     @inlinable @inline(__always)
-    public static func parse(string: String) -> JsonElement? {
-        return parse(hitch: Hitch(stringLiteral: string))
+    public static func parsed(string: String, _ callback: (JsonElement?) -> Void) {
+        Reader.parsed(string: string, callback)
     }
 
 }
