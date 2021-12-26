@@ -35,6 +35,36 @@ public enum Spanker {
     }
 
     public final class JsonElement: CustomStringConvertible {
+        static let null = JsonElement()
+        static let `true` = JsonElement(bool: true)
+        static let `false` = JsonElement(bool: false)
+        static let intZero = JsonElement(int: 0)
+        static let intOne = JsonElement(int: 1)
+        static let intTwo = JsonElement(int: 2)
+        static let intThree = JsonElement(int: 3)
+        static let intFour = JsonElement(int: 4)
+        static let intFive = JsonElement(int: 5)
+        static let intSix = JsonElement(int: 6)
+        static let intSeven = JsonElement(int: 7)
+        static let intEight = JsonElement(int: 8)
+        static let intNine = JsonElement(int: 9)
+        static let doubleZero = JsonElement(double: 0.0)
+        static let doubleOne = JsonElement(double: 1.0)
+        static let doubleTwo = JsonElement(double: 2.0)
+        static let doubleThree = JsonElement(double: 3.0)
+        static let doubleFour = JsonElement(double: 4.0)
+        static let doubleFive = JsonElement(double: 5.0)
+        static let doubleSix = JsonElement(double: 6.0)
+        static let doubleSeven = JsonElement(double: 7.0)
+        static let doubleEight = JsonElement(double: 8.0)
+        static let doubleNine = JsonElement(double: 9.0)
+        static let emptyString = JsonElement(string: HalfHitch())
+        static let emptyArray = JsonElement(array: [])
+        static let emptyDictionary = JsonElement(keys: [], values: [])
+
+        // deinit {
+        //    print("deinit: type: \(type) value: \(self)")
+        // }
 
         @discardableResult
         @inlinable @inline(__always)

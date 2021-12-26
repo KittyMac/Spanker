@@ -54,6 +54,13 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_array_objects_simple1() {
+        let json = #"[{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}}]"#
+        json.parsed { result in
+            XCTAssertEqual(json, result?.description)
+        }
+    }
+    
     func test_object_simple2() {
         let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(LLONG_MAX)}"
         json.parsed { result in
