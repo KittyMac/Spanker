@@ -7,6 +7,8 @@ extension Spanker {
         case unknown
         case null
         case string
+        case booleanTrue
+        case booleanFalse
         case int
         case double
         case element
@@ -31,7 +33,9 @@ extension Spanker {
         }
     }
 
+    @usableFromInline
     internal class Reader {
+        @usableFromInline
         internal var json: Hitch
 
         public init(data: Data) {
@@ -46,6 +50,7 @@ extension Spanker {
             json = Hitch(hitch: hitch)
         }
 
+        @inlinable @inline(__always)
         internal func strlen(at offset: Int) -> Int {
             var idx = offset
             while idx < json.count && json[idx] != 0 {
@@ -54,6 +59,7 @@ extension Spanker {
             return idx - offset
         }
 
+        @inlinable @inline(__always)
         internal func strskip(offset: Int, _ params: UInt8...) -> Int {
             let end = json.count
             var idx = offset
@@ -66,6 +72,7 @@ extension Spanker {
             return idx
         }
 
+        @inlinable @inline(__always)
         internal func strstrNoEscaped(offset: Int, find: UInt8) -> Int {
             // look forward for the matching character, not counting escaped versions of it
             let end = json.count
@@ -82,10 +89,12 @@ extension Spanker {
             return idx
         }
 
+        @inlinable @inline(__always)
         internal func extract(start: Int, end: Int) -> Hitch? {
             return json.substring(start, end)
         }
 
+        @usableFromInline
         internal func parse() -> JsonElement? {
             var currentIdx = 0
             var char: UInt8 = 0
@@ -107,22 +116,42 @@ extension Spanker {
                 return elementStack.last
             }
 
-            let attributeAsHitch: (Int) -> Hitch = { endIdx in
-                return self.extract(start: jsonAttribute.valueIdx, end: endIdx) ?? Hitch()
+            let attributeAsHitch: (Int) -> JsonElement = { endIdx in
+                guard let valueString = self.extract(start: jsonAttribute.valueIdx, end: endIdx) else { return JsonElement() }
+                return JsonElement(string: valueString)
             }
 
-            let attributeAsInt: (Int) -> Int = { endIdx in
-                return self.extract(start: jsonAttribute.valueIdx, end: endIdx)?.toInt() ?? 0
+            let attributeAsInt: (Int) -> JsonElement = { endIdx in
+                guard let valueString = self.extract(start: jsonAttribute.valueIdx, end: endIdx) else { return JsonElement() }
+                guard let value = valueString.toInt() else { return JsonElement() }
+                return JsonElement(int: value)
             }
 
-            let attributeAsDouble: (Int) -> Double = { endIdx in
-                return self.extract(start: jsonAttribute.valueIdx, end: endIdx)?.toDouble() ?? 0.0
+            let attributeAsDouble: (Int) -> JsonElement = { endIdx in
+                guard let valueString = self.extract(start: jsonAttribute.valueIdx, end: endIdx) else { return JsonElement() }
+                guard let value = valueString.toDouble() else { return JsonElement() }
+                return JsonElement(double: value)
             }
 
             let attributeName: () -> Hitch? = {
                 guard jsonAttribute.nameIdx > 0 else { return nil }
                 guard jsonAttribute.endNameIdx > jsonAttribute.nameIdx else { return nil }
                 return self.extract(start: jsonAttribute.nameIdx, end: jsonAttribute.endNameIdx)
+            }
+
+            let appendElement: (Hitch?, JsonElement) -> Void = { key, value in
+                if let jsonElement = jsonElement {
+                    if jsonElement.type == .array {
+                        jsonElement.append(value: value)
+                    } else if let key = key,
+                              jsonElement.type == .dictionary {
+                        jsonElement.append(key: key,
+                                           value: value)
+                    }
+                } else {
+                    rootElement = value
+                    jsonElement = value
+                }
             }
 
             // find next element start
@@ -139,7 +168,7 @@ extension Spanker {
                     jsonElement = parseEndElement()
                 } else if char == .openBracket || char == .openBrace {
                     // we've found the start of a new object
-                    let nextElement = (char == .openBracket) ? JsonElement(dictionary: [:]) : JsonElement(array: [])
+                    let nextElement = (char == .openBracket) ? JsonElement(keys: [], values: []) : JsonElement(array: [])
 
                     elementStack.append(nextElement)
 
@@ -150,11 +179,12 @@ extension Spanker {
                         } else {
                             jsonElement.append(value: nextElement)
                         }
+                        jsonAttribute.clear()
                     }
 
                     jsonElement = nextElement
 
-                } else if char == .singleQuote || char == .doubleQuote {
+                } else if jsonElement?.type == .dictionary && (char == .singleQuote || char == .doubleQuote) {
                     // We've found the name portion of a KVP
 
                     if jsonAttribute.nameIdx == 0 {
@@ -182,118 +212,165 @@ extension Spanker {
 
                             nextCurrentIdx = strstrNoEscaped(offset: jsonAttribute.valueIdx, find: nextChar)
 
-                            jsonElement?.append(key: key,
-                                                value: JsonElement(string: attributeAsHitch(nextCurrentIdx)))
+                            appendElement(key, attributeAsHitch(nextCurrentIdx))
+
                             jsonAttribute.clear()
 
                             nextCurrentIdx += 1
                         } else if nextChar == .openBracket || nextChar == .openBrace {
                             // our value is an array or an object; we will process it next time through the main loop
-                        } else if nextChar == .n && json[nextCurrentIdx+1] == .u && json[nextCurrentIdx+2] == .l && json[nextCurrentIdx+3] == .l {
+                        } else if nextCurrentIdx < json.count - 3 &&
+                                    nextChar == .n &&
+                                    json[nextCurrentIdx+1] == .u &&
+                                    json[nextCurrentIdx+2] == .l &&
+                                    json[nextCurrentIdx+3] == .l {
                             // our value is null; pick up at the end of it
                             nextCurrentIdx += 4
-                            jsonElement?.append(key: key,
-                                                value: JsonElement())
+
+                            appendElement(key, JsonElement())
+
                             jsonAttribute.clear()
                         } else {
                             // our value is likely a number; capture it then advance to the next ',' or '}' or whitespace
                             jsonAttribute.type = .int
                             jsonAttribute.valueIdx = nextCurrentIdx
 
-                            while nextChar != .space &&
+                            while nextCurrentIdx < json.count &&
+                                    nextChar != .space &&
                                     nextChar != .tab &&
                                     nextChar != .newLine &&
                                     nextChar != .carriageReturn &&
                                     nextChar != .comma &&
                                     nextChar != .closeBracket &&
                                     nextChar != .closeBrace {
-                                if nextChar == .dot {
+                                if nextChar == .f &&
+                                    nextCurrentIdx < json.count - 4 &&
+                                    json[nextCurrentIdx+1] == .a &&
+                                    json[nextCurrentIdx+2] == .l &&
+                                    json[nextCurrentIdx+3] == .s &&
+                                    json[nextCurrentIdx+4] == .e {
+                                    jsonAttribute.type = .booleanFalse
+                                    nextCurrentIdx += 5
+                                    break
+                                } else if nextChar == .t &&
+                                    nextCurrentIdx < json.count - 3 &&
+                                    json[nextCurrentIdx+1] == .r &&
+                                    json[nextCurrentIdx+2] == .u &&
+                                    json[nextCurrentIdx+3] == .e {
+                                    jsonAttribute.type = .booleanTrue
+                                    nextCurrentIdx += 4
+                                    break
+                                } else if nextChar == .dot {
                                     jsonAttribute.type = .double
                                 }
                                 nextCurrentIdx += 1
                                 nextChar = json[nextCurrentIdx]
                             }
 
-                            if jsonAttribute.type == .int {
-                                jsonElement?.append(key: key,
-                                                    value: JsonElement(int: attributeAsInt(nextCurrentIdx)))
+                            if jsonAttribute.type == .booleanTrue {
+                                appendElement(key, JsonElement(bool: true))
+                            } else if jsonAttribute.type == .booleanFalse {
+                                appendElement(key, JsonElement(bool: false))
+                            } else if jsonAttribute.type == .int {
+                                appendElement(key, attributeAsInt(nextCurrentIdx))
                             } else if jsonAttribute.type == .double {
-                                jsonElement?.append(key: key,
-                                                    value: JsonElement(double: attributeAsDouble(nextCurrentIdx)))
+                                appendElement(key, attributeAsDouble(nextCurrentIdx))
                             }
+
                             jsonAttribute.clear()
 
                             if nextChar == .closeBrace {
                                 jsonElement = parseEndElement()
                             }
-
-                            nextCurrentIdx += 1
                         }
                     }
                 } else {
-                    if jsonElement?.type == .array {
-                        // this could be an array element...
-                        nextCurrentIdx = strskip(offset: currentIdx, .space, .tab, .newLine, .carriageReturn)
+                    nextCurrentIdx = strskip(offset: currentIdx, .space, .tab, .newLine, .carriageReturn)
 
-                        // advance forward until we find the start of the next thing
-                        var nextChar = json[nextCurrentIdx]
-                        if nextChar == .doubleQuote || nextChar == .singleQuote {
-                            // our value is a string
-                            jsonAttribute.type = .string
-                            jsonAttribute.valueIdx = nextCurrentIdx + 1
-                            nextCurrentIdx = strstrNoEscaped(offset: jsonAttribute.valueIdx, find: nextChar)
+                    // advance forward until we find the start of the next thing
+                    var nextChar = json[nextCurrentIdx]
+                    if nextChar == .doubleQuote || nextChar == .singleQuote {
+                        // our value is a string
+                        jsonAttribute.type = .string
+                        jsonAttribute.valueIdx = nextCurrentIdx + 1
 
-                            jsonElement?.append(value: JsonElement(string: attributeAsHitch(nextCurrentIdx)))
+                        nextCurrentIdx = strstrNoEscaped(offset: jsonAttribute.valueIdx, find: nextChar)
 
+                        appendElement(nil, attributeAsHitch(nextCurrentIdx))
+
+                        jsonAttribute.clear()
+
+                        nextCurrentIdx += 1
+                    } else if nextChar == .openBrace || nextChar == .openBracket {
+                        // our value is an array or an object; we will process it next time through the main loop
+                        nextCurrentIdx = nextCurrentIdx - 1
+                    } else if nextCurrentIdx < json.count - 3 &&
+                                nextChar == .n &&
+                                json[nextCurrentIdx+1] == .u &&
+                                json[nextCurrentIdx+2] == .l &&
+                                json[nextCurrentIdx+3] == .l {
+                        // our value is null; pick up at the end of it
+                        nextCurrentIdx += 4
+
+                        appendElement(nil, JsonElement())
+
+                        jsonAttribute.clear()
+                    } else {
+                        // our value is likely a number; capture it then advance to the next ',' or '}' or whitespace
+                        jsonAttribute.type = .int
+                        jsonAttribute.valueIdx = nextCurrentIdx
+
+                        while nextCurrentIdx < json.count &&
+                                nextChar != .space &&
+                                nextChar != .tab &&
+                                nextChar != .newLine &&
+                                nextChar != .carriageReturn &&
+                                nextChar != .comma &&
+                                nextChar != .closeBracket &&
+                                nextChar != .closeBrace {
+                            if nextChar == .f &&
+                                nextCurrentIdx < json.count - 4 &&
+                                json[nextCurrentIdx+1] == .a &&
+                                json[nextCurrentIdx+2] == .l &&
+                                json[nextCurrentIdx+3] == .s &&
+                                json[nextCurrentIdx+4] == .e {
+                                jsonAttribute.type = .booleanFalse
+                                nextCurrentIdx += 5
+                                break
+                            } else if nextChar == .t &&
+                                nextCurrentIdx < json.count - 3 &&
+                                json[nextCurrentIdx+1] == .r &&
+                                json[nextCurrentIdx+2] == .u &&
+                                json[nextCurrentIdx+3] == .e {
+                                jsonAttribute.type = .booleanTrue
+                                nextCurrentIdx += 4
+                                break
+                            } else if nextChar == .dot {
+                                jsonAttribute.type = .double
+                            }
                             nextCurrentIdx += 1
-                            jsonAttribute.clear()
-                        } else if nextChar == .openBrace || nextChar == .openBracket {
-                            // our value is an array or an object; we will process it next time through the main loop
-                        } else if nextChar == .n && json[nextCurrentIdx+1] == .u && json[nextCurrentIdx+2] == .l && json[nextCurrentIdx+3] == .l {
-                            // our value is null; pick up at the end of it
-                            jsonAttribute.type = .null
-                            nextCurrentIdx += 4
-                            jsonElement?.append(value: JsonElement())
-                            jsonAttribute.clear()
-                        } else {
-                            // our value is likely a number; capture it then advance to the next ',' or '}' or whitespace
-                            jsonAttribute.type = .int
-                            jsonAttribute.valueIdx = nextCurrentIdx
+                            nextChar = json[nextCurrentIdx]
+                        }
 
-                            while nextChar != .space &&
-                                    nextChar != .tab &&
-                                    nextChar != .newLine &&
-                                    nextChar != .carriageReturn &&
-                                    nextChar != .comma &&
-                                    nextChar != .closeBracket &&
-                                    nextChar != .closeBrace {
-                                if nextChar == .dot {
-                                    jsonAttribute.type = .double
-                                }
-                                nextCurrentIdx += 1
-                                nextChar = json[nextCurrentIdx]
-                            }
+                        if jsonAttribute.type == .booleanTrue {
+                            appendElement(nil, JsonElement(bool: true))
+                        } else if jsonAttribute.type == .booleanFalse {
+                            appendElement(nil, JsonElement(bool: false))
+                        } else if jsonAttribute.type == .int {
+                            appendElement(nil, attributeAsInt(nextCurrentIdx))
+                        } else if jsonAttribute.type == .double {
+                            appendElement(nil, attributeAsDouble(nextCurrentIdx))
+                        }
 
-                            // json[nextCurrentIdx] = 0
+                        jsonAttribute.clear()
 
-                            if jsonAttribute.type == .int {
-                                jsonElement?.append(value: JsonElement(int: attributeAsInt(nextCurrentIdx)))
-                            } else if jsonAttribute.type == .double {
-                                jsonElement?.append(value: JsonElement(double: attributeAsDouble(nextCurrentIdx)))
-                            }
-                            jsonAttribute.clear()
-
-                            if nextChar == .closeBrace {
-                                jsonElement = parseEndElement()
-                            }
-
-                            nextCurrentIdx += 1
+                        if nextChar == .closeBrace {
+                            jsonElement = parseEndElement()
                         }
                     }
                 }
 
                 currentIdx = nextCurrentIdx
-
             }
 
             while elementStack.count > 0 {
