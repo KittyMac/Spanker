@@ -62,10 +62,6 @@ public enum Spanker {
         static let emptyArray = JsonElement(array: [])
         static let emptyDictionary = JsonElement(keys: [], values: [])
 
-        // deinit {
-        //    print("deinit: type: \(type) value: \(self)")
-        // }
-
         @discardableResult
         @inlinable @inline(__always)
         public func json(hitch: Hitch) -> Hitch {
@@ -163,6 +159,11 @@ public enum Spanker {
         public var valueDouble: Double?
         public var valueArray: [JsonElement]?
         public var keyArray: [HalfHitch]?
+
+        @inlinable @inline(__always)
+        public var count: Int {
+            return valueArray?.count ?? valueString?.count ?? 0
+        }
 
         @inlinable @inline(__always)
         internal func append(value: JsonElement) {

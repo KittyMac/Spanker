@@ -24,6 +24,11 @@ internal func strstrNoEscaped(json: HalfHitch, offset: Int, find: UInt8) -> Int 
             idx += 1
             continue
         }
+        if char == .backSlash {
+            skipNext = true
+            idx += 1
+            continue
+        }
         if char == find {
             return idx
         }
@@ -241,7 +246,7 @@ extension Spanker {
                                 jsonAttribute.nameIdx = currentIdx + 1
 
                                 // Find the name of the name string and null terminate it
-                                nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.nameIdx, find: char)
+                                nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.nameIdx, find: .doubleQuote)
                                 jsonAttribute.endNameIdx = nextCurrentIdx
 
                                 // Find the ':'
@@ -255,12 +260,12 @@ extension Spanker {
 
                                 // advance forward until we find the start of the next thing
                                 var nextChar = raw[nextCurrentIdx]
-                                if nextChar == .singleQuote || nextChar == .doubleQuote {
+                                if nextChar == .doubleQuote {
                                     // our value is a string
                                     jsonAttribute.type = .string
                                     jsonAttribute.valueIdx = nextCurrentIdx + 1
 
-                                    nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.valueIdx, find: nextChar)
+                                    nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.valueIdx, find: .doubleQuote)
 
                                     appendElement(key, attributeAsHitch(nextCurrentIdx))
 
@@ -339,12 +344,12 @@ extension Spanker {
 
                             // advance forward until we find the start of the next thing
                             var nextChar = raw[nextCurrentIdx]
-                            if nextChar == .doubleQuote || nextChar == .singleQuote {
+                            if nextChar == .doubleQuote {
                                 // our value is a string
                                 jsonAttribute.type = .string
                                 jsonAttribute.valueIdx = nextCurrentIdx + 1
 
-                                nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.valueIdx, find: nextChar)
+                                nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.valueIdx, find: .doubleQuote)
 
                                 appendElement(nil, attributeAsHitch(nextCurrentIdx))
 
