@@ -5,22 +5,22 @@ private let emptyHalfHitch = HalfHitch()
 
 public extension Data {
     @inlinable @inline(__always)
-    func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
-        Spanker.parsed(data: self, callback)
+    func parsed<T>(_ callback: (Spanker.JsonElement?) -> T?) -> T? {
+        return Spanker.parsed(data: self, callback)
     }
 }
 
 public extension Hitch {
     @inlinable @inline(__always)
-    func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
-        Spanker.parsed(hitch: self, callback)
+    func parsed<T>(_ callback: (Spanker.JsonElement?) -> T?) -> T? {
+        return Spanker.parsed(hitch: self, callback)
     }
 }
 
 public extension String {
     @inlinable @inline(__always)
-    func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
-        Spanker.parsed(string: self, callback)
+    func parsed<T>(_ callback: (Spanker.JsonElement?) -> T?) -> T? {
+        return Spanker.parsed(string: self, callback)
     }
 }
 
@@ -205,18 +205,18 @@ public enum Spanker {
     }
 
     @inlinable @inline(__always)
-    public static func parsed(hitch: Hitch, _ callback: (JsonElement?) -> Void) {
-        Reader.parsed(hitch: hitch, callback)
+    public static func parsed<T>(hitch: Hitch, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(hitch: hitch, callback)
     }
 
     @inlinable @inline(__always)
-    public static func parsed(data: Data, _ callback: (JsonElement?) -> Void) {
-        Reader.parsed(data: data, callback)
+    public static func parsed<T>(data: Data, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(data: data, callback)
     }
 
     @inlinable @inline(__always)
-    public static func parsed(string: String, _ callback: (JsonElement?) -> Void) {
-        Reader.parsed(string: string, callback)
+    public static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(string: string, callback)
     }
 
 }

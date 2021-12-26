@@ -161,7 +161,7 @@ class SpankerTests: TestsBase {
     func test_github1() {
         let jsonData = try! Data(contentsOf: URL(fileURLWithPath: "/Volumes/Storage/large.minified.json"))
         jsonData.parsed { result in
-            guard let result = result else { return XCTFail() }
+            guard let result = result else { XCTFail(); return }
             
             XCTAssertEqual(String(data: jsonData, encoding: .utf8)?.count, result.description.count)
         }
