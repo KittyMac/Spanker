@@ -3,7 +3,7 @@ import class Foundation.Bundle
 
 import Spanker
 
-class SpankerTestsPerformance: TestsBase {
+class SpankerTestsMemoryPerformance: TestsBase {
     
     var largeData: Data = Data()
     
@@ -13,20 +13,18 @@ class SpankerTestsPerformance: TestsBase {
     }
     
     func test_baseline() {
-        measure {
+        measure(metrics: [XCTMemoryMetric()], options: .default) {
             if let obj = try? JSONSerialization.jsonObject(with: largeData, options: [.allowFragments]),
                let jsonArray = obj as? [Any] {
-                print(jsonArray.count)
+                XCTAssertEqual(jsonArray.count, 11351)
             }
         }
     }
     
     func test_large_load() {
-        measure {
+        measure(metrics: [XCTMemoryMetric()], options: .default) {
             largeData.parsed { results in
-                if let results = results {
-                    print(results.count)
-                }
+                XCTAssertEqual(results?.count, 11351)
             }
         }
     }
