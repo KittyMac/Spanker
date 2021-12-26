@@ -73,17 +73,17 @@ extension Spanker {
     internal enum Reader {
 
         @usableFromInline
-        internal static func parsed(hitch: Hitch, _ callback: (JsonElement?) -> Void) {
-            parsed(data: hitch.dataNoCopy(), callback)
+        internal static func parsed<T>(hitch: Hitch, _ callback: (JsonElement?) -> T?) -> T? {
+            return parsed(data: hitch.dataNoCopy(), callback)
         }
 
         @usableFromInline
-        internal static func parsed(string: String, _ callback: (JsonElement?) -> Void) {
-            parsed(data: string.data(using: .utf8) ?? Data(), callback)
+        internal static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
+            return parsed(data: string.data(using: .utf8) ?? Data(), callback)
         }
 
         @usableFromInline
-        internal static func parsed(data: Data, _ callback: (JsonElement?) -> Void) {
+        internal static func parsed<T>(data: Data, _ callback: (JsonElement?) -> T?) -> T? {
             var currentIdx = 0
             var char: UInt8 = 0
 
@@ -93,7 +93,7 @@ extension Spanker {
             var rootElement: JsonElement?
             var jsonElement: JsonElement?
 
-            HalfHitch.using(data: data) { json in
+            return HalfHitch.using(data: data) { json in
 
                 let parseEndElement: () -> JsonElement? = {
                     guard elementStack.count > 0 else { return nil }
@@ -433,7 +433,7 @@ extension Spanker {
                     jsonElement = parseEndElement()
                 }
 
-                callback(rootElement)
+                return callback(rootElement)
             }
 
         }
