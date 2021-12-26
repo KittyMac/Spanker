@@ -1,6 +1,8 @@
 import Foundation
 import Hitch
 
+private let emptyHalfHitch = HalfHitch()
+
 public extension Data {
     @inlinable @inline(__always)
     func parsed(_ callback: (Spanker.JsonElement?) -> Void) {
@@ -24,7 +26,7 @@ public extension String {
 
 public enum Spanker {
 
-    public enum JsonType {
+    public enum JsonType: UInt8 {
         case null
         case boolean
         case string
@@ -34,6 +36,9 @@ public enum Spanker {
         case dictionary
     }
 
+    // Note: this is 112 bytes according to the profiler
+    // Note: this is 96 bytes according to the profiler
+    // Note: this is 80 bytes according to the profiler
     public final class JsonElement: CustomStringConvertible {
         static let null = JsonElement()
         static let `true` = JsonElement(bool: true)
@@ -58,90 +63,137 @@ public enum Spanker {
         static let doubleSeven = JsonElement(double: 7.0)
         static let doubleEight = JsonElement(double: 8.0)
         static let doubleNine = JsonElement(double: 9.0)
-        static let emptyString = JsonElement(string: HalfHitch())
+        static let emptyString = JsonElement(string: emptyHalfHitch)
         static let emptyArray = JsonElement(array: [])
         static let emptyDictionary = JsonElement(keys: [], values: [])
+
+        public let type: JsonType
+
+        public var valueString: HalfHitch = emptyHalfHitch
+        public var valueInt: Int = 0
+        public var valueDouble: Double = 0.0
+        public var valueArray: [JsonElement] = []
+        public var keyArray: [HalfHitch] = []
+
+        public var valueBool: Bool {
+            return valueInt == 0 ? false : true
+        }
+
+        @inlinable @inline(__always)
+        public var count: Int {
+            if type == .string {
+                return valueString.count
+            }
+            return valueArray.count
+        }
+
+        @inlinable @inline(__always)
+        internal func append(value: JsonElement) {
+            valueArray.append(value)
+        }
+
+        @inlinable @inline(__always)
+        internal func append(key: HalfHitch,
+                             value: JsonElement) {
+            keyArray.append(key)
+            valueArray.append(value)
+        }
+
+        @inlinable @inline(__always)
+        init() {
+            type = .null
+        }
+
+        @inlinable @inline(__always)
+        init(string: HalfHitch) {
+            type = .string
+            valueString = string
+        }
+
+        @inlinable @inline(__always)
+        init(bool: Bool) {
+            type = .boolean
+            valueInt = bool == true ? 1 : 0
+        }
+
+        @inlinable @inline(__always)
+        init(int: Int) {
+            type = .int
+            valueInt = int
+        }
+
+        @inlinable @inline(__always)
+        init(double: Double) {
+            type = .double
+            valueDouble = double
+        }
+
+        @inlinable @inline(__always)
+        init(array: [JsonElement]) {
+            type = .array
+            valueArray = array
+        }
+
+        @inlinable @inline(__always)
+        init(keys: [HalfHitch],
+             values: [JsonElement]) {
+            type = .dictionary
+            valueArray = []
+            keyArray = []
+        }
 
         @discardableResult
         @inlinable @inline(__always)
         public func json(hitch: Hitch) -> Hitch {
-            let appendNull: () -> Void = {
+            switch type {
+            case .null:
                 hitch.append(UInt8.n)
                 hitch.append(UInt8.u)
                 hitch.append(UInt8.l)
                 hitch.append(UInt8.l)
-            }
-            switch type {
-            case .null:
-                appendNull()
             case .boolean:
-                if let valueBool = valueBool {
-                    if valueBool {
-                        hitch.append(UInt8.t)
-                        hitch.append(UInt8.r)
-                        hitch.append(UInt8.u)
-                        hitch.append(UInt8.e)
-                    } else {
-                        hitch.append(UInt8.f)
-                        hitch.append(UInt8.a)
-                        hitch.append(UInt8.l)
-                        hitch.append(UInt8.s)
-                        hitch.append(UInt8.e)
-                    }
+                if valueInt != 0 {
+                    hitch.append(UInt8.t)
+                    hitch.append(UInt8.r)
+                    hitch.append(UInt8.u)
+                    hitch.append(UInt8.e)
                 } else {
-                    appendNull()
+                    hitch.append(UInt8.f)
+                    hitch.append(UInt8.a)
+                    hitch.append(UInt8.l)
+                    hitch.append(UInt8.s)
+                    hitch.append(UInt8.e)
                 }
             case .string:
-                if let valueString = valueString {
-                    hitch.append(UInt8.doubleQuote)
-                    hitch.append(valueString)
-                    hitch.append(UInt8.doubleQuote)
-                } else {
-                    appendNull()
-                }
+                hitch.append(UInt8.doubleQuote)
+                hitch.append(valueString)
+                hitch.append(UInt8.doubleQuote)
             case .int:
-                if let valueInt = valueInt {
-                    hitch.append(number: valueInt)
-                } else {
-                    appendNull()
-                }
+                hitch.append(number: valueInt)
             case .double:
-                if let valueDouble = valueDouble {
-                    hitch.append(double: valueDouble)
-                } else {
-                    appendNull()
-                }
+                hitch.append(double: valueDouble)
             case .array:
-                if let valueArray = valueArray {
-                    hitch.append(UInt8.openBrace)
-                    for idx in 0..<valueArray.count {
-                        valueArray[idx].json(hitch: hitch)
-                        if idx < valueArray.count - 1 {
-                            hitch.append(UInt8.comma)
-                        }
+                hitch.append(UInt8.openBrace)
+                for idx in 0..<valueArray.count {
+                    valueArray[idx].json(hitch: hitch)
+                    if idx < valueArray.count - 1 {
+                        hitch.append(UInt8.comma)
                     }
-                    hitch.append(UInt8.closeBrace)
-                } else {
-                    appendNull()
                 }
+                hitch.append(UInt8.closeBrace)
             case .dictionary:
-                if let valueArray = valueArray,
-                   let keyArray = keyArray {
-                    hitch.append(UInt8.openBracket)
-                    for idx in 0..<keyArray.count {
-                        hitch.append(UInt8.doubleQuote)
-                        hitch.append(keyArray[idx])
-                        hitch.append(UInt8.doubleQuote)
-                        hitch.append(UInt8.colon)
-                        valueArray[idx].json(hitch: hitch)
-                        if idx < keyArray.count - 1 {
-                            hitch.append(UInt8.comma)
-                        }
+                hitch.append(UInt8.openBracket)
+                for idx in 0..<keyArray.count {
+                    hitch.append(UInt8.doubleQuote)
+                    hitch.append(keyArray[idx])
+                    hitch.append(UInt8.doubleQuote)
+                    hitch.append(UInt8.colon)
+                    valueArray[idx].json(hitch: hitch)
+                    if idx < keyArray.count - 1 {
+                        hitch.append(UInt8.comma)
                     }
-                    hitch.append(UInt8.closeBracket)
-                } else {
-                    appendNull()
                 }
+                hitch.append(UInt8.closeBracket)
             }
             return hitch
         }
@@ -149,117 +201,6 @@ public enum Spanker {
         @inlinable @inline(__always)
         public var description: String {
             return json(hitch: Hitch()).description
-        }
-
-        public let type: JsonType
-
-        public var valueString: HalfHitch?
-        public var valueBool: Bool?
-        public var valueInt: Int?
-        public var valueDouble: Double?
-        public var valueArray: [JsonElement]?
-        public var keyArray: [HalfHitch]?
-
-        @inlinable @inline(__always)
-        public var count: Int {
-            return valueArray?.count ?? valueString?.count ?? 0
-        }
-
-        @inlinable @inline(__always)
-        internal func append(value: JsonElement) {
-            valueArray?.append(value)
-        }
-
-        @inlinable @inline(__always)
-        internal func append(key: HalfHitch,
-                             value: JsonElement) {
-            keyArray?.append(key)
-            valueArray?.append(value)
-        }
-
-        @inlinable @inline(__always)
-        init() {
-            type = .null
-
-            valueString = nil
-            valueBool = nil
-            valueInt = nil
-            valueDouble = nil
-            valueArray = nil
-            keyArray = nil
-        }
-
-        @inlinable @inline(__always)
-        init(string: HalfHitch) {
-            type = .string
-
-            valueString = string
-            valueBool = nil
-            valueInt = nil
-            valueDouble = nil
-            valueArray = nil
-            keyArray = nil
-        }
-
-        @inlinable @inline(__always)
-        init(bool: Bool) {
-            type = .boolean
-
-            valueString = nil
-            valueBool = bool
-            valueInt = nil
-            valueDouble = nil
-            valueArray = nil
-            keyArray = nil
-        }
-
-        @inlinable @inline(__always)
-        init(int: Int) {
-            type = .int
-
-            valueString = nil
-            valueBool = nil
-            valueInt = int
-            valueDouble = nil
-            valueArray = nil
-            keyArray = nil
-        }
-
-        @inlinable @inline(__always)
-        init(double: Double) {
-            type = .double
-
-            valueString = nil
-            valueBool = nil
-            valueInt = nil
-            valueDouble = double
-            valueArray = nil
-            keyArray = nil
-        }
-
-        @inlinable @inline(__always)
-        init(array: [JsonElement]) {
-            type = .array
-
-            valueString = nil
-            valueBool = nil
-            valueInt = nil
-            valueDouble = nil
-            valueArray = array
-            keyArray = nil
-        }
-
-        @inlinable @inline(__always)
-        init(keys: [HalfHitch],
-             values: [JsonElement]) {
-            type = .dictionary
-
-            valueString = nil
-            valueBool = nil
-            valueInt = nil
-            valueDouble = nil
-            valueArray = []
-            keyArray = []
         }
     }
 

@@ -12,6 +12,10 @@ class SpankerTestsMemoryPerformance: TestsBase {
         largeData = try! Data(contentsOf: URL(fileURLWithPath: largeDataPath))
     }
     
+    func test_github1() {
+        largeData.parsed { result in }
+    }
+    
     func test_baseline() {
         measure(metrics: [XCTMemoryMetric()], options: .default) {
             if let obj = try? JSONSerialization.jsonObject(with: largeData, options: [.allowFragments]),
