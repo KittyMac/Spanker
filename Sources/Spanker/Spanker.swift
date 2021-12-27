@@ -38,11 +38,10 @@ public enum JsonType: UInt8 {
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible {
-    @usableFromInline
-    static let null = JsonElement()
+    public static let null = JsonElement()
 
-    static let `true` = JsonElement(bool: true)
-    static let `false` = JsonElement(bool: false)
+    public static let `true` = JsonElement(bool: true)
+    public static let `false` = JsonElement(bool: false)
     static let intZero = JsonElement(int: 0)
     static let intOne = JsonElement(int: 1)
     static let intTwo = JsonElement(int: 2)
@@ -63,9 +62,9 @@ public final class JsonElement: CustomStringConvertible {
     static let doubleSeven = JsonElement(double: 7.0)
     static let doubleEight = JsonElement(double: 8.0)
     static let doubleNine = JsonElement(double: 9.0)
-    static let emptyString = JsonElement(string: emptyHalfHitch)
-    static let emptyArray = JsonElement(array: [])
-    static let emptyDictionary = JsonElement(keys: [], values: [])
+    public static let emptyString = JsonElement(string: emptyHalfHitch)
+    public static let emptyArray = JsonElement(array: [])
+    public static let emptyDictionary = JsonElement(keys: [], values: [])
 
     public let type: JsonType
 
