@@ -193,7 +193,7 @@ public final class JsonElement: CustomStringConvertible {
         case .boolean:
             return valueInt != 0
         case .string:
-            return valueString.hitch()
+            return valueString.toString()
         case .int:
             return valueInt
         case .double:
@@ -201,10 +201,10 @@ public final class JsonElement: CustomStringConvertible {
         case .array:
             return valueArray.map { $0.reify() }
         case .dictionary:
-            var dict = [Hitch: Any?]()
+            var dict = [String: Any?]()
             var idx = 0
             for key in keyArray {
-                dict[key.hitch()] = valueArray[idx]
+                dict[key.toString()] = valueArray[idx]
                 idx += 1
             }
             return dict
