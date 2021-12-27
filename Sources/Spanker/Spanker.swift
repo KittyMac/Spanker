@@ -186,9 +186,12 @@ public final class JsonElement: CustomStringConvertible {
         valueArray = values
     }
 
-    public func reify() -> Any? {
+    public func reify(_ useNSNull: Bool = false) -> Any? {
         switch type {
         case .null:
+            if useNSNull {
+                return NSNull()
+            }
             return nil
         case .boolean:
             return valueInt != 0
