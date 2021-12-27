@@ -204,7 +204,7 @@ public final class JsonElement: CustomStringConvertible {
             var dict = [String: Any?]()
             var idx = 0
             for key in keyArray {
-                dict[key.toString()] = valueArray[idx]
+                dict[key.toString()] = valueArray[idx].reify()
                 idx += 1
             }
             return dict
