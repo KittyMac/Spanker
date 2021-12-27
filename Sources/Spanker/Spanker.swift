@@ -187,6 +187,31 @@ public final class JsonElement: CustomStringConvertible {
         valueArray = values
     }
 
+    public func reify() -> Any? {
+        switch type {
+        case .null:
+            return nil
+        case .boolean:
+            return valueInt != 0
+        case .string:
+            return valueString.hitch()
+        case .int:
+            return valueInt
+        case .double:
+            return valueDouble
+        case .array:
+            return valueArray.map { $0.reify() }
+        case .dictionary:
+            var dict = [Hitch: Any?]()
+            var idx = 0
+            for key in keyArray {
+                dict[key.hitch()] = valueArray[idx]
+                idx += 1
+            }
+            return dict
+        }
+    }
+
     @discardableResult
     @inlinable @inline(__always)
     public func json(hitch: Hitch) -> Hitch {
