@@ -418,10 +418,6 @@ extension Spanker {
                                 }
 
                                 jsonAttribute.clear()
-
-                                if nextChar == .closeBrace {
-                                    jsonElement = parseEndElement()
-                                }
                             }
                         }
 
