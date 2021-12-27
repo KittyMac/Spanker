@@ -74,8 +74,8 @@ public final class JsonElement: CustomStringConvertible {
     public var valueDouble: Double = 0.0
     public var valueArray: [JsonElement] = []
     public var keyArray: [HalfHitch] = []
-    public var valueDictionary: [HalfHitch: JsonElement] = [:]
 
+    @inlinable @inline(__always)
     public var valueBool: Bool {
         return valueInt == 0 ? false : true
     }
@@ -101,8 +101,18 @@ public final class JsonElement: CustomStringConvertible {
     @inlinable @inline(__always)
     public subscript (key: HalfHitch) -> JsonElement {
         get {
-            if let value = valueDictionary[key] {
-                return value
+            if let index = keyArray.firstIndex(of: key) {
+                return valueArray[index]
+            }
+            return JsonElement.null
+        }
+    }
+
+    @inlinable @inline(__always)
+    public subscript (key: Hitch) -> JsonElement {
+        get {
+            if let index = keyArray.firstIndex(of: key.halfhitch()) {
+                return valueArray[index]
             }
             return JsonElement.null
         }
@@ -110,7 +120,7 @@ public final class JsonElement: CustomStringConvertible {
 
     @inlinable @inline(__always)
     public func contains(key: HalfHitch) -> Bool {
-        return valueDictionary[key] != nil
+        return keyArray.contains(key)
     }
 
     @inlinable @inline(__always)
@@ -121,7 +131,6 @@ public final class JsonElement: CustomStringConvertible {
     @inlinable @inline(__always)
     internal func append(key: HalfHitch,
                          value: JsonElement) {
-        valueDictionary[key] = value
         keyArray.append(key)
         valueArray.append(value)
     }
@@ -168,11 +177,6 @@ public final class JsonElement: CustomStringConvertible {
 
         keyArray = keys
         valueArray = values
-        for idx in 0..<keys.count {
-            let key = keys[idx]
-            let value = values[idx]
-            valueDictionary[key] = value
-        }
     }
 
     @discardableResult
