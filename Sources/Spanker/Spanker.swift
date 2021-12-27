@@ -124,6 +124,14 @@ public final class JsonElement: CustomStringConvertible {
     }
 
     @inlinable @inline(__always)
+    public func contains(key: Hitch) -> Bool {
+        for existingKey in keyArray where existingKey == key {
+            return true
+        }
+        return false
+    }
+
+    @inlinable @inline(__always)
     internal func append(value: JsonElement) {
         valueArray.append(value)
     }
