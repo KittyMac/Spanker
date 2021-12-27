@@ -90,7 +90,7 @@ public final class JsonElement: CustomStringConvertible {
     @inlinable @inline(__always)
     public subscript (index: Int) -> JsonElement? {
         get {
-            guard index > 0 && index < valueArray.count else {
+            guard index >= 0 && index < valueArray.count else {
                 return nil
             }
             return valueArray[index]
