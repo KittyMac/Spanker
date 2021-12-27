@@ -38,7 +38,9 @@ public enum JsonType: UInt8 {
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible {
+    @usableFromInline
     static let null = JsonElement()
+
     static let `true` = JsonElement(bool: true)
     static let `false` = JsonElement(bool: false)
     static let intZero = JsonElement(int: 0)
@@ -72,6 +74,7 @@ public final class JsonElement: CustomStringConvertible {
     public var valueDouble: Double = 0.0
     public var valueArray: [JsonElement] = []
     public var keyArray: [HalfHitch] = []
+    public var valueDictionary: [HalfHitch: JsonElement] = [:]
 
     public var valueBool: Bool {
         return valueInt == 0 ? false : true
@@ -86,6 +89,31 @@ public final class JsonElement: CustomStringConvertible {
     }
 
     @inlinable @inline(__always)
+    public subscript (index: Int) -> JsonElement {
+        get {
+            guard index > 0 && index < valueArray.count else {
+                return JsonElement.null
+            }
+            return valueArray[index]
+        }
+    }
+
+    @inlinable @inline(__always)
+    public subscript (key: HalfHitch) -> JsonElement {
+        get {
+            if let value = valueDictionary[key] {
+                return value
+            }
+            return JsonElement.null
+        }
+    }
+
+    @inlinable @inline(__always)
+    public func contains(key: HalfHitch) -> Bool {
+        return valueDictionary[key] != nil
+    }
+
+    @inlinable @inline(__always)
     internal func append(value: JsonElement) {
         valueArray.append(value)
     }
@@ -93,6 +121,7 @@ public final class JsonElement: CustomStringConvertible {
     @inlinable @inline(__always)
     internal func append(key: HalfHitch,
                          value: JsonElement) {
+        valueDictionary[key] = value
         keyArray.append(key)
         valueArray.append(value)
     }
@@ -136,8 +165,14 @@ public final class JsonElement: CustomStringConvertible {
     init(keys: [HalfHitch],
          values: [JsonElement]) {
         type = .dictionary
-        valueArray = []
-        keyArray = []
+
+        keyArray = keys
+        valueArray = values
+        for idx in 0..<keys.count {
+            let key = keys[idx]
+            let value = values[idx]
+            valueDictionary[key] = value
+        }
     }
 
     @discardableResult
