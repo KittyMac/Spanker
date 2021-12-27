@@ -89,32 +89,32 @@ public final class JsonElement: CustomStringConvertible {
     }
 
     @inlinable @inline(__always)
-    public subscript (index: Int) -> JsonElement {
+    public subscript (index: Int) -> JsonElement? {
         get {
             guard index > 0 && index < valueArray.count else {
-                return JsonElement.null
+                return nil
             }
             return valueArray[index]
         }
     }
 
     @inlinable @inline(__always)
-    public subscript (key: HalfHitch) -> JsonElement {
+    public subscript (key: HalfHitch) -> JsonElement? {
         get {
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index]
             }
-            return JsonElement.null
+            return nil
         }
     }
 
     @inlinable @inline(__always)
-    public subscript (key: Hitch) -> JsonElement {
+    public subscript (key: Hitch) -> JsonElement? {
         get {
             if let index = keyArray.firstIndex(of: key.halfhitch()) {
                 return valueArray[index]
             }
-            return JsonElement.null
+            return nil
         }
     }
 
