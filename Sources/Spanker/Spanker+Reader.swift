@@ -109,7 +109,7 @@ extension Spanker {
                 let attributeAsHitch: (Int) -> JsonElement = { endIdx in
                     guard jsonAttribute.valueIdx < endIdx else { return JsonElement.emptyString }
                     let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
-                    return JsonElement(string: valueString)
+                    return JsonElement(string: valueString.unescaped())
                 }
 
                 let attributeAsInt: (Int) -> JsonElement = { endIdx in

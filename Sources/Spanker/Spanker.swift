@@ -236,7 +236,7 @@ public final class JsonElement: CustomStringConvertible {
             }
         case .string:
             hitch.append(UInt8.doubleQuote)
-            hitch.append(valueString)
+            hitch.append(valueString.escaped(unicode: false, singleQuotes: false))
             hitch.append(UInt8.doubleQuote)
         case .int:
             hitch.append(number: valueInt)
