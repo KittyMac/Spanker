@@ -1,8 +1,6 @@
 import Foundation
 import Hitch
 
-private let emptyHalfHitch = HalfHitch()
-
 public extension Data {
     @inlinable @inline(__always)
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
@@ -62,13 +60,13 @@ public final class JsonElement: CustomStringConvertible {
     static let doubleSeven = JsonElement(double: 7.0)
     static let doubleEight = JsonElement(double: 8.0)
     static let doubleNine = JsonElement(double: 9.0)
-    public static let emptyString = JsonElement(string: emptyHalfHitch)
+    public static let emptyString = JsonElement(string: HalfHitch.empty)
     public static let emptyArray = JsonElement(array: [])
     public static let emptyDictionary = JsonElement(keys: [], values: [])
 
     public let type: JsonType
 
-    public var valueString: HalfHitch = emptyHalfHitch
+    public var valueString: HalfHitch = HalfHitch.empty
     public var valueInt: Int = 0
     public var valueDouble: Double = 0.0
     public var valueArray: [JsonElement] = []
