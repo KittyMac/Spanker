@@ -61,6 +61,30 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_containsAll() {
+        let json = #"{"foo0":{"bar":"baz"},"foo1":{"bar":"baz"},"foo2":{"bar":"baz"},"foo3":{"bar":"baz"},"foo4":{"bar":"baz"},"foo5":{"bar":"baz"}"#
+        json.parsed { result in
+            guard let result = result else { XCTFail(); return }
+            guard result.type == .dictionary else { XCTFail(); return }
+            
+            let propertiesSuccess = [
+                "foo0".hitch().halfhitch(),
+                "foo1".hitch().halfhitch(),
+                "foo2".hitch().halfhitch(),
+            ]
+            
+            XCTAssertTrue(result.containsAll(keys: propertiesSuccess))
+            
+            let propertiesFail = [
+                "foo0".hitch().halfhitch(),
+                "fooA".hitch().halfhitch(),
+                "foo2".hitch().halfhitch(),
+            ]
+            
+            XCTAssertFalse(result.containsAll(keys: propertiesFail))
+        }
+    }
+    
     func test_object_simple2() {
         let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(LLONG_MAX)}"
         json.parsed { result in
