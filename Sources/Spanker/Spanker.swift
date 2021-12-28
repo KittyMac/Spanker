@@ -132,6 +132,22 @@ public final class JsonElement: CustomStringConvertible {
     }
 
     @inlinable @inline(__always)
+    public func containsAll(keys: [Hitch]) -> Bool {
+        // returns true if all keys in keys are inside of the keyArray
+        for keyA in keys {
+            var keyExists = false
+            for keyB in keyArray where keyA == keyB {
+                keyExists = true
+                break
+            }
+            if keyExists == false {
+                return false
+            }
+        }
+        return true
+    }
+
+    @inlinable @inline(__always)
     public func contains(key: HalfHitch) -> Bool {
         return keyArray.contains(key)
     }

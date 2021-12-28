@@ -68,20 +68,24 @@ class SpankerTests: TestsBase {
             guard result.type == .dictionary else { XCTFail(); return }
             
             let propertiesSuccess = [
-                "foo0".hitch().halfhitch(),
-                "foo1".hitch().halfhitch(),
-                "foo2".hitch().halfhitch(),
+                "foo0".hitch(),
+                "foo1".hitch(),
+                "foo2".hitch(),
+            ]
+            let propertiesFail = [
+                "foo0".hitch(),
+                "fooA".hitch(),
+                "foo2".hitch(),
             ]
             
             XCTAssertTrue(result.containsAll(keys: propertiesSuccess))
-            
-            let propertiesFail = [
-                "foo0".hitch().halfhitch(),
-                "fooA".hitch().halfhitch(),
-                "foo2".hitch().halfhitch(),
-            ]
-            
             XCTAssertFalse(result.containsAll(keys: propertiesFail))
+            
+            let propertiesSuccess2 = propertiesSuccess.map { $0.halfhitch() }
+            let propertiesFail2 = propertiesFail.map { $0.halfhitch() }
+            
+            XCTAssertTrue(result.containsAll(keys: propertiesSuccess2))
+            XCTAssertFalse(result.containsAll(keys: propertiesFail2))
         }
     }
     
