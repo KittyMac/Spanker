@@ -206,7 +206,7 @@ class SpankerTests: TestsBase {
         ]
         for json in jsons {
             json.parsed { result in
-                XCTAssertEqual(json, result?.description)
+                XCTAssertEqual(json.replacingOccurrences(of: "u\\u0308", with: "ü"), result?.description)
             }
         }
     }

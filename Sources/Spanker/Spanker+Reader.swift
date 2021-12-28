@@ -13,10 +13,15 @@ internal func strskip(json: HalfHitch, offset: Int, _ params: UInt8...) -> Int {
 }
 
 @inlinable @inline(__always)
-internal func strstrNoEscaped(json: HalfHitch, offset: Int, find: UInt8) -> Int {
+internal func strstrNoEscaped(json: HalfHitch,
+                              offset: Int,
+                              find: UInt8,
+                              shouldUnescape: inout Bool) -> Int {
     // look forward for the matching character, not counting escaped versions of it
     var skipNext = false
     var idx = offset
+
+    shouldUnescape = false
     for char in json.stride(from: offset, to: json.count) {
         guard char != 0 else { break }
         guard skipNext == false else {
@@ -25,6 +30,7 @@ internal func strstrNoEscaped(json: HalfHitch, offset: Int, find: UInt8) -> Int 
             continue
         }
         if char == .backSlash {
+            shouldUnescape = true
             skipNext = true
             idx += 1
             continue
@@ -61,11 +67,13 @@ extension Spanker {
         var nameIdx: Int = 0
         var endNameIdx: Int = 0
         var valueIdx: Int = 0
+        var shouldUnescape = false
 
         mutating func clear() {
             self.type = .unknown
             self.nameIdx = 0
             self.valueIdx = 0
+            self.shouldUnescape = false
         }
     }
 
@@ -108,8 +116,11 @@ extension Spanker {
 
                 let attributeAsHitch: (Int) -> JsonElement = { endIdx in
                     guard jsonAttribute.valueIdx < endIdx else { return JsonElement.emptyString }
-                    let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
-                    return JsonElement(string: valueString.unescaped())
+                    var valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
+                    if jsonAttribute.shouldUnescape {
+                        valueString.unescape()
+                    }
+                    return JsonElement(string: valueString)
                 }
 
                 let attributeAsInt: (Int) -> JsonElement = { endIdx in
@@ -176,7 +187,12 @@ extension Spanker {
                 }
 
                 let attributeName: () -> HalfHitch? = {
-                    return HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
+                    guard jsonAttribute.nameIdx > 0 else { return nil }
+                    var name = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
+                    if jsonAttribute.shouldUnescape {
+                        name.unescape()
+                    }
+                    return name
                 }
 
                 let appendElement: (HalfHitch?, JsonElement) -> Void = { key, value in
@@ -246,17 +262,28 @@ extension Spanker {
                                 jsonAttribute.nameIdx = currentIdx + 1
 
                                 // Find the name of the name string and null terminate it
-                                nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.nameIdx, find: .doubleQuote)
+                                var shouldUnescape = false
+                                nextCurrentIdx = strstrNoEscaped(json: json,
+                                                                 offset: jsonAttribute.nameIdx,
+                                                                 find: .doubleQuote,
+                                                                 shouldUnescape: &shouldUnescape)
+                                jsonAttribute.shouldUnescape = shouldUnescape
                                 jsonAttribute.endNameIdx = nextCurrentIdx
 
                                 // Find the ':'
-                                nextCurrentIdx = strstrNoEscaped(json: json, offset: nextCurrentIdx + 1, find: .colon) + 1
+                                nextCurrentIdx = strstrNoEscaped(json: json,
+                                                                 offset: nextCurrentIdx + 1,
+                                                                 find: .colon,
+                                                                 shouldUnescape: &shouldUnescape) + 1
 
                                 // skip whitespace
                                 nextCurrentIdx = strskip(json: json, offset: nextCurrentIdx, .space, .tab, .newLine, .carriageReturn)
 
                                 // grab the name of the attribute
-                                let key = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
+                                var key = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
+                                if jsonAttribute.shouldUnescape {
+                                    key.unescape()
+                                }
 
                                 // advance forward until we find the start of the next thing
                                 var nextChar = raw[nextCurrentIdx]
@@ -265,7 +292,13 @@ extension Spanker {
                                     jsonAttribute.type = .string
                                     jsonAttribute.valueIdx = nextCurrentIdx + 1
 
-                                    nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.valueIdx, find: .doubleQuote)
+                                    var shouldUnescape = false
+                                    nextCurrentIdx = strstrNoEscaped(json: json,
+                                                                     offset: jsonAttribute.valueIdx,
+                                                                     find: .doubleQuote,
+                                                                     shouldUnescape: &shouldUnescape)
+
+                                    jsonAttribute.shouldUnescape = shouldUnescape
 
                                     appendElement(key, attributeAsHitch(nextCurrentIdx))
 
@@ -349,7 +382,13 @@ extension Spanker {
                                 jsonAttribute.type = .string
                                 jsonAttribute.valueIdx = nextCurrentIdx + 1
 
-                                nextCurrentIdx = strstrNoEscaped(json: json, offset: jsonAttribute.valueIdx, find: .doubleQuote)
+                                var shouldUnescape = false
+                                nextCurrentIdx = strstrNoEscaped(json: json,
+                                                                 offset: jsonAttribute.valueIdx,
+                                                                 find: .doubleQuote,
+                                                                 shouldUnescape: &shouldUnescape)
+
+                                jsonAttribute.shouldUnescape = shouldUnescape
 
                                 appendElement(nil, attributeAsHitch(nextCurrentIdx))
 
