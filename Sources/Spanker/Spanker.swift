@@ -216,29 +216,34 @@ public final class JsonElement: CustomStringConvertible {
         valueArray = values
     }
 
+    private var cachedReify: Any?
     public func reify(_ useNSNull: Bool = false) -> Any? {
+        guard cachedReify == nil else { return cachedReify }
+
         switch type {
         case .null:
             if useNSNull {
-                return NSNull()
+                cachedReify = NSNull()
             }
             return nil
         case .boolean:
-            return valueInt != 0
+            cachedReify = valueInt != 0
         case .string:
-            return valueString.toString()
+            cachedReify = valueString.toString()
         case .int:
-            return valueInt
+            cachedReify = valueInt
         case .double:
-            return valueDouble
+            cachedReify = valueDouble
         case .array:
-            return valueArray.map { $0.reify() }
+            cachedReify = valueArray.map { $0.reify() }
         case .dictionary:
-            return [String: Any?](uniqueKeysWithValues: zip(
+            cachedReify = [String: Any?](uniqueKeysWithValues: zip(
                 keyArray.map { $0.toString() },
                 valueArray.map { $0.reify() }
             ))
         }
+
+        return cachedReify
     }
 
     @discardableResult

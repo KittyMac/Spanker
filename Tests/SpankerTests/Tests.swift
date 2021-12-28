@@ -185,7 +185,7 @@ class SpankerTests: TestsBase {
             XCTAssertEqual(json, result?.description)
         }
     }
-    
+        
     func test_escaped_string() {
         let json = #""u\u0308""#
         
