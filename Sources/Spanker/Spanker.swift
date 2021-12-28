@@ -234,13 +234,10 @@ public final class JsonElement: CustomStringConvertible {
         case .array:
             return valueArray.map { $0.reify() }
         case .dictionary:
-            var dict = [String: Any?]()
-            var idx = 0
-            for key in keyArray {
-                dict[key.toString()] = valueArray[idx].reify()
-                idx += 1
-            }
-            return dict
+            return [String: Any?](uniqueKeysWithValues: zip(
+                keyArray.map { $0.toString() },
+                valueArray.map { $0.reify() }
+            ))
         }
     }
 
