@@ -242,10 +242,10 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
         switch type {
         case .null:
-            if useNSNull {
-                cachedReify = NSNull()
+            if useNSNull == false {
+                return nil
             }
-            return nil
+            cachedReify = NSNull()
         case .boolean:
             cachedReify = valueInt != 0
         case .string:
