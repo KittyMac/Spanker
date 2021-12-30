@@ -35,7 +35,7 @@ public enum JsonType: UInt8 {
 // Note: this is 112 bytes according to the profiler
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
-public final class JsonElement: CustomStringConvertible {
+public final class JsonElement: CustomStringConvertible, Equatable {
     public static let null = JsonElement()
 
     public static let `true` = JsonElement(bool: true)
@@ -63,6 +63,26 @@ public final class JsonElement: CustomStringConvertible {
     public static let emptyString = JsonElement(string: HalfHitch.empty)
     public static let emptyArray = JsonElement(array: [])
     public static let emptyDictionary = JsonElement(keys: [], values: [])
+
+    public static func == (lhs: JsonElement, rhs: JsonElement) -> Bool {
+        guard lhs.type == rhs.type else { return false }
+        switch lhs.type {
+        case .null:
+            return true
+        case .boolean:
+            return lhs.valueInt == rhs.valueInt
+        case .string:
+            return lhs.valueString == rhs.valueString
+        case .int:
+            return lhs.valueInt == rhs.valueInt
+        case .double:
+            return lhs.valueDouble == rhs.valueDouble
+        case .array:
+            return lhs.valueArray == rhs.valueArray
+        case .dictionary:
+            return lhs.keyArray == rhs.keyArray && lhs.valueArray == rhs.valueArray
+        }
+    }
 
     public let type: JsonType
 

@@ -185,6 +185,30 @@ class SpankerTests: TestsBase {
             XCTAssertEqual(json, result?.description)
         }
     }
+    
+    func test_jsonElementEquality() {
+        let jsonTrue = #"[1, 1, 0.1, 0.1, true, true, "hello", "hello", [1,2,3], [1,2,3], {"foo":"bar"}, {"foo":"bar"}]"#
+        jsonTrue.parsed { result in
+            guard let result = result else { XCTFail(); return }
+            
+            for idx in 0..<result.count {
+                if idx % 2 == 0 {
+                    XCTAssertEqual(result.valueArray[idx], result.valueArray[idx+1])
+                }
+            }
+        }
+        
+        let jsonFalse = #"[1, 2, 0.1, 0.2, true, false, "hello", "world", [1,2,3], [4,5,6], {"foo":"bar"}, {"foo":"baz"}]"#
+        jsonFalse.parsed { result in
+            guard let result = result else { XCTFail(); return }
+            
+            for idx in 0..<result.count {
+                if idx % 2 == 0 {
+                    XCTAssertNotEqual(result.valueArray[idx], result.valueArray[idx+1])
+                }
+            }
+        }
+    }
         
     func test_escaped_string() {
         let json = #""u\u0308""#
