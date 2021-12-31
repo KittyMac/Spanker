@@ -5,9 +5,9 @@
         "package": "Hitch",
         "repositoryURL": "https://github.com/KittyMac/Hitch.git",
         "state": {
-          "branch": "main",
+          "branch": null,
           "revision": "eb1b9474d60464171f2443952a01f70074b41f5d",
-          "version": null
+          "version": "0.1.0"
         }
       }
     ]
