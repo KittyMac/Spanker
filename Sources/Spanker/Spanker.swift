@@ -225,6 +225,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     init(array: [JsonElement]) {
         type = .array
         valueArray = array
+        valueArray.reserveCapacity(32)
     }
 
     @inlinable @inline(__always)
@@ -233,7 +234,9 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         type = .dictionary
 
         keyArray = keys
+        keyArray.reserveCapacity(32)
         valueArray = values
+        valueArray.reserveCapacity(32)
     }
 
     private var cachedReify: Any?

@@ -16,21 +16,4 @@ class SpankerTestsMemoryPerformance: TestsBase {
         largeData.parsed { result in }
     }
     
-    func test_baseline() {
-        measure(metrics: [XCTMemoryMetric()], options: .default) {
-            if let obj = try? JSONSerialization.jsonObject(with: largeData, options: [.allowFragments]),
-               let jsonArray = obj as? [Any] {
-                XCTAssertEqual(jsonArray.count, 11351)
-            }
-        }
-    }
-    
-    func test_large_load() {
-        measure(metrics: [XCTMemoryMetric()], options: .default) {
-            largeData.parsed { results in
-                XCTAssertEqual(results?.count, 11351)
-            }
-        }
-    }
-    
 }
