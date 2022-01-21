@@ -193,6 +193,66 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
+    public init(unknown: Any?) {
+        guard let unknown = unknown else { type = .null; return }
+
+        switch unknown {
+        case _ as NSNull:
+            type = .null
+            return
+        case let value as Int:
+            type = .int
+            valueInt = value
+            return
+        case let value as Double:
+            type = .double
+            valueDouble = value
+            return
+        case let value as Float:
+            type = .double
+            valueDouble = Double(value)
+            return
+        case let value as NSNumber:
+            type = .double
+            valueDouble = value.doubleValue
+            return
+        case let value as Bool:
+            type = .boolean
+            valueInt = value == true ? 1 : 0
+            return
+        case let value as Hitch:
+            type = .string
+            valueString = Hitch(value).halfhitch()
+            return
+        case let value as HalfHitch:
+            type = .string
+            valueString = Hitch(value.hitch()).halfhitch()
+            return
+        case let value as String:
+            type = .string
+            valueString = value.hitch().halfhitch()
+            return
+        case let value as [Any?]:
+            type = .array
+            valueArray = value.map { JsonElement(unknown: $0) }
+            return
+        case let dict as [String: [Any?]]:
+            type = .dictionary
+
+            keyArray.reserveCapacity(dict.count)
+            valueArray.reserveCapacity(dict.count)
+            for (key, value) in dict {
+                keyArray.append(key.hitch().halfhitch())
+                valueArray.append(JsonElement(unknown: value))
+            }
+            return
+        default:
+            type = .null
+            return
+        }
+    }
+
+    @inlinable @inline(__always)
     init() {
         type = .null
     }
