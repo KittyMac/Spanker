@@ -115,7 +115,7 @@ extension Spanker {
                 }
 
                 let attributeAsHitch: (Int) -> JsonElement = { endIdx in
-                    guard jsonAttribute.valueIdx < endIdx else { return JsonElement.emptyString }
+                    guard jsonAttribute.valueIdx < endIdx else { return JsonElement(string: HalfHitch()) }
                     var valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
                     if jsonAttribute.shouldUnescape {
                         valueString.unescape()
@@ -124,65 +124,14 @@ extension Spanker {
                 }
 
                 let attributeAsInt: (Int) -> JsonElement = { endIdx in
-                    if jsonAttribute.valueIdx + 1 == endIdx {
-                        let char = json[jsonAttribute.valueIdx]
-                        if char == UInt8.zero {
-                            return JsonElement.intZero
-                        } else if char == UInt8.one {
-                            return JsonElement.intOne
-                        } else if char == UInt8.two {
-                            return JsonElement.intTwo
-                        } else if char == UInt8.three {
-                            return JsonElement.intThree
-                        } else if char == UInt8.four {
-                            return JsonElement.intFour
-                        } else if char == UInt8.five {
-                            return JsonElement.intFive
-                        } else if char == UInt8.six {
-                            return JsonElement.intSix
-                        } else if char == UInt8.seven {
-                            return JsonElement.intSeven
-                        } else if char == UInt8.eight {
-                            return JsonElement.intEight
-                        } else if char == UInt8.nine {
-                            return JsonElement.intNine
-                        }
-                    }
                     let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
-                    guard let value = valueString.toInt() else { return JsonElement.null }
+                    guard let value = valueString.toInt() else { return JsonElement() }
                     return JsonElement(int: value)
                 }
 
                 let attributeAsDouble: (Int) -> JsonElement = { endIdx in
-                    if jsonAttribute.valueIdx + 3 == endIdx {
-                        if json[jsonAttribute.valueIdx+1] == UInt8.dot &&
-                            json[jsonAttribute.valueIdx+2] == UInt8.zero {
-                            let char = json[jsonAttribute.valueIdx]
-                            if char == UInt8.zero {
-                                return JsonElement.doubleZero
-                            } else if char == UInt8.one {
-                                return JsonElement.doubleOne
-                            } else if char == UInt8.two {
-                                return JsonElement.doubleTwo
-                            } else if char == UInt8.three {
-                                return JsonElement.doubleThree
-                            } else if char == UInt8.four {
-                                return JsonElement.doubleFour
-                            } else if char == UInt8.five {
-                                return JsonElement.doubleFive
-                            } else if char == UInt8.six {
-                                return JsonElement.doubleSix
-                            } else if char == UInt8.seven {
-                                return JsonElement.doubleSeven
-                            } else if char == UInt8.eight {
-                                return JsonElement.doubleEight
-                            } else if char == UInt8.nine {
-                                return JsonElement.doubleNine
-                            }
-                        }
-                    }
                     let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
-                    guard let value = valueString.toDouble() else { return JsonElement.null }
+                    guard let value = valueString.toDouble() else { return JsonElement() }
                     return JsonElement(double: value)
                 }
 
@@ -245,9 +194,9 @@ extension Spanker {
                             // fast path: is this an empty object or bracket?
                             let nextChar = raw[currentIdx + 1]
                             if nextChar == .closeBracket {
-                                processElement(JsonElement.emptyDictionary)
+                                processElement(JsonElement(keys: [], values: []))
                             } else if nextChar == .closeBrace {
-                                processElement(JsonElement.emptyArray)
+                                processElement(JsonElement(array: []))
                             } else if char == .openBracket {
                                 processElement(JsonElement(keys: [], values: []))
                             } else {
@@ -315,7 +264,7 @@ extension Spanker {
                                     // our value is null; pick up at the end of it
                                     nextCurrentIdx += 4
 
-                                    appendElement(key, JsonElement.null)
+                                    appendElement(key, JsonElement())
 
                                     jsonAttribute.clear()
                                 } else {
@@ -356,9 +305,9 @@ extension Spanker {
                                     }
 
                                     if jsonAttribute.type == .booleanTrue {
-                                        appendElement(key, JsonElement.true)
+                                        appendElement(key, JsonElement(bool: true))
                                     } else if jsonAttribute.type == .booleanFalse {
-                                        appendElement(key, JsonElement.false)
+                                        appendElement(key, JsonElement(bool: false))
                                     } else if jsonAttribute.type == .int {
                                         appendElement(key, attributeAsInt(nextCurrentIdx))
                                     } else if jsonAttribute.type == .double {
@@ -406,7 +355,7 @@ extension Spanker {
                                 // our value is null; pick up at the end of it
                                 nextCurrentIdx += 4
 
-                                appendElement(nil, JsonElement.null)
+                                appendElement(nil, JsonElement())
 
                                 jsonAttribute.clear()
                             } else {
@@ -447,9 +396,9 @@ extension Spanker {
                                 }
 
                                 if jsonAttribute.type == .booleanTrue {
-                                    appendElement(nil, JsonElement.true)
+                                    appendElement(nil, JsonElement(bool: true))
                                 } else if jsonAttribute.type == .booleanFalse {
-                                    appendElement(nil, JsonElement.false)
+                                    appendElement(nil, JsonElement(bool: false))
                                 } else if jsonAttribute.type == .int {
                                     appendElement(nil, attributeAsInt(nextCurrentIdx))
                                 } else if jsonAttribute.type == .double {

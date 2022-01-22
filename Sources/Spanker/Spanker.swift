@@ -36,33 +36,11 @@ public enum JsonType: UInt8 {
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible, Equatable {
-    public static let null = JsonElement()
 
-    public static let `true` = JsonElement(bool: true)
-    public static let `false` = JsonElement(bool: false)
-    static let intZero = JsonElement(int: 0)
-    static let intOne = JsonElement(int: 1)
-    static let intTwo = JsonElement(int: 2)
-    static let intThree = JsonElement(int: 3)
-    static let intFour = JsonElement(int: 4)
-    static let intFive = JsonElement(int: 5)
-    static let intSix = JsonElement(int: 6)
-    static let intSeven = JsonElement(int: 7)
-    static let intEight = JsonElement(int: 8)
-    static let intNine = JsonElement(int: 9)
-    static let doubleZero = JsonElement(double: 0.0)
-    static let doubleOne = JsonElement(double: 1.0)
-    static let doubleTwo = JsonElement(double: 2.0)
-    static let doubleThree = JsonElement(double: 3.0)
-    static let doubleFour = JsonElement(double: 4.0)
-    static let doubleFive = JsonElement(double: 5.0)
-    static let doubleSix = JsonElement(double: 6.0)
-    static let doubleSeven = JsonElement(double: 7.0)
-    static let doubleEight = JsonElement(double: 8.0)
-    static let doubleNine = JsonElement(double: 9.0)
-    public static let emptyString = JsonElement(string: HalfHitch.empty)
-    public static let emptyArray = JsonElement(array: [])
-    public static let emptyDictionary = JsonElement(keys: [], values: [])
+    @inlinable @inline(__always)
+    public static func null() -> JsonElement {
+        return JsonElement()
+    }
 
     public static func == (lhs: JsonElement, rhs: JsonElement) -> Bool {
         guard lhs.type == rhs.type else { return false }
