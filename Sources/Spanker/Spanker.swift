@@ -271,6 +271,36 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
+    public func replace(at: Int, value: Any?) {
+        guard type == .array else { return }
+        guard at >= 0 && at < valueArray.count else { return }
+        valueArray[at] = JsonElement(unknown: value)
+    }
+
+    @inlinable @inline(__always)
+    public func replace(key: Hitch,
+                        value: Any?) {
+        guard type == .dictionary else { return }
+        guard let index = keyArray.firstIndex(of: key.halfhitch()) else { return }
+        keyArray[index] = key.halfhitch()
+        valueArray[index] = JsonElement(unknown: value)
+    }
+
+    @inlinable @inline(__always)
+    public func replace(key: String,
+                       value: Any?) {
+        guard type == .dictionary else { return }
+        replace(key: key, value: JsonElement(unknown: value))
+    }
+
+    @inlinable @inline(__always)
+    public func replace(key: HalfHitch,
+                       value: Any?) {
+        guard type == .dictionary else { return }
+        replace(key: key, value: JsonElement(unknown: value))
+    }
+
+    @inlinable @inline(__always)
     public func append(value: Any?) {
         guard type == .array else { return }
         append(value: JsonElement(unknown: value))
@@ -298,10 +328,10 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    public func remove(index: Int) {
+    public func remove(at: Int) {
         guard type == .array else { return }
-        guard index >= 0 && index < valueArray.count else { return }
-        valueArray.remove(at: index)
+        guard at >= 0 && at < valueArray.count else { return }
+        valueArray.remove(at: at)
     }
 
     @inlinable @inline(__always)
