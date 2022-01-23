@@ -37,6 +37,49 @@ public enum JsonType: UInt8 {
 // Note: this is 80 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible, Equatable {
 
+    public struct KeysIterator: Sequence, IteratorProtocol {
+        @usableFromInline
+        internal var index = -1
+
+        @usableFromInline
+        internal let element: JsonElement
+
+        @inlinable @inline(__always)
+        internal init(element: JsonElement) {
+            self.element = element
+        }
+
+        @inlinable @inline(__always)
+        public mutating func next() -> HalfHitch? {
+            guard element.type == .dictionary else { return nil }
+            guard index < element.keyArray.count - 1 else { return nil }
+            index += 1
+            return element.keyArray[index]
+        }
+    }
+
+    public struct ValuesIterator: Sequence, IteratorProtocol {
+        @usableFromInline
+        internal var index = 0
+
+        @usableFromInline
+        internal let element: JsonElement
+
+        @inlinable @inline(__always)
+        internal init(element: JsonElement) {
+            self.index = 0
+            self.element = element
+        }
+
+        @inlinable @inline(__always)
+        public mutating func next() -> JsonElement? {
+            guard element.type == .dictionary || element.type == .array else { return nil }
+            guard index < element.valueArray.count - 1 else { return nil }
+            index += 1
+            return element.valueArray[index]
+        }
+    }
+
     @inlinable @inline(__always)
     public static func null() -> JsonElement {
         return JsonElement()
@@ -66,6 +109,17 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     public let type: JsonType
 
+    @inlinable @inline(__always)
+    public var rawKeys: KeysIterator {
+        return KeysIterator(element: self)
+    }
+
+    @inlinable @inline(__always)
+    public var rawValues: ValuesIterator {
+        return ValuesIterator(element: self)
+    }
+
+    @inlinable @inline(__always)
     public var stringValue: String? {
         get {
             guard type == .string else { return nil }
@@ -81,6 +135,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
+    @inlinable @inline(__always)
     public var intValue: Int? {
         get {
             guard type == .int else { return nil }
@@ -92,6 +147,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
+    @inlinable @inline(__always)
     public var doubleValue: Double? {
         get {
             guard type == .double else { return nil }
@@ -103,6 +159,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
+    @inlinable @inline(__always)
     public var boolValue: Bool? {
         get {
             guard type == .boolean else { return nil }

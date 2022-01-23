@@ -2,6 +2,7 @@ import XCTest
 import class Foundation.Bundle
 
 import Spanker
+import Hitch
 
 class SpankerTests: TestsBase {
     
@@ -90,7 +91,7 @@ class SpankerTests: TestsBase {
     }
     
     func test_object_simple2() {
-        let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(SIZE_MAX)}"
+        let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(INT64_MAX)}"
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
         }
@@ -270,6 +271,30 @@ class SpankerTests: TestsBase {
             json.parsed { result in
                 XCTAssertEqual(json, result?.description)
             }
+        }
+    }
+    
+    func test_iterators() {
+        let valuesJson = #"[0,1,2,3,4,5,6,7,8,9]"#
+        
+        valuesJson.parsed { root in
+            guard let root = root else { return }
+            var total = 0
+            for value in root.rawValues {
+                total += value.intValue ?? 0
+            }
+            XCTAssertEqual(total, 45)
+        }
+        
+        let keysJson = #"{"Hello":0," ":1,"World":2}"#
+        
+        keysJson.parsed { root in
+            guard let root = root else { return }
+            let combined = Hitch()
+            for key in root.rawKeys {
+                combined.append(key)
+            }
+            XCTAssertEqual(combined, "Hello World")
         }
     }
     
