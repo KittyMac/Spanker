@@ -36,25 +36,61 @@ public enum JsonType: UInt8 {
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible, Equatable {
+    
+    public struct WalkingIterator: Sequence, IteratorProtocol {
+        @usableFromInline
+        internal var index = -1
+        
+        @usableFromInline
+        internal var countMinusOne = 0
+
+        @usableFromInline
+        internal let keyArray: [HalfHitch]
+        
+        @usableFromInline
+        internal let valueArray: [JsonElement]
+
+        @inlinable @inline(__always)
+        internal init(keyArray: [HalfHitch], valueArray: [JsonElement]) {
+            self.keyArray = keyArray
+            self.valueArray = valueArray
+            countMinusOne = valueArray.count - 1
+        }
+
+        @inlinable @inline(__always)
+        public mutating func next() -> (HalfHitch, JsonElement)? {
+            while true {
+                guard index < countMinusOne else { return nil }
+                index += 1
+                let value = valueArray[index]
+                if value.type == .dictionary || value.type == .array {
+                    return (keyArray[index], value)
+                }
+            }
+        }
+    }
 
     public struct KeysIterator: Sequence, IteratorProtocol {
         @usableFromInline
         internal var index = -1
 
         @usableFromInline
-        internal let element: JsonElement
+        internal let countMinusOne: Int
+        
+        @usableFromInline
+        internal let keyArray: [HalfHitch]
 
         @inlinable @inline(__always)
-        internal init(element: JsonElement) {
-            self.element = element
+        internal init(keyArray: [HalfHitch]) {
+            self.keyArray = keyArray
+            countMinusOne = keyArray.count - 1
         }
 
         @inlinable @inline(__always)
         public mutating func next() -> HalfHitch? {
-            guard element.type == .dictionary else { return nil }
-            guard index < element.keyArray.count - 1 else { return nil }
+            guard index < countMinusOne else { return nil }
             index += 1
-            return element.keyArray[index]
+            return keyArray[index]
         }
     }
 
@@ -63,19 +99,22 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         internal var index = -1
 
         @usableFromInline
-        internal let element: JsonElement
+        internal let countMinusOne: Int
+
+        @usableFromInline
+        internal let valueArray: [JsonElement]
 
         @inlinable @inline(__always)
-        internal init(element: JsonElement) {
-            self.element = element
+        internal init(valueArray: [JsonElement]) {
+            self.valueArray = valueArray
+            countMinusOne = valueArray.count - 1
         }
 
         @inlinable @inline(__always)
         public mutating func next() -> JsonElement? {
-            guard element.type == .dictionary || element.type == .array else { return nil }
-            guard index < element.valueArray.count - 1 else { return nil }
+            guard index < countMinusOne else { return nil }
             index += 1
-            return element.valueArray[index]
+            return valueArray[index]
         }
     }
 
@@ -110,15 +149,20 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public var type: JsonType {
         return internalType
     }
-
+        
     @inlinable @inline(__always)
-    public var rawKeys: KeysIterator {
-        return KeysIterator(element: self)
+    public var iterWalking: WalkingIterator {
+        return WalkingIterator(keyArray: keyArray, valueArray: valueArray)
     }
 
     @inlinable @inline(__always)
-    public var rawValues: ValuesIterator {
-        return ValuesIterator(element: self)
+    public var iterKeys: KeysIterator {
+        return KeysIterator(keyArray: keyArray)
+    }
+
+    @inlinable @inline(__always)
+    public var iterValues: ValuesIterator {
+        return ValuesIterator(valueArray: valueArray)
     }
 
     @inlinable @inline(__always)
@@ -325,6 +369,23 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public func append(value: Any?) {
         guard internalType == .array else { return }
         valueArray.append(JsonElement(unknown: value))
+    }
+    
+    @inlinable @inline(__always)
+    public func rename(key: String, with: String) {
+        rename(key: key.hitch().halfhitch(), with: with.hitch().halfhitch())
+    }
+    
+    @inlinable @inline(__always)
+    public func rename(key: Hitch, with: Hitch) {
+        rename(key: key.halfhitch(), with: with.halfhitch())
+    }
+    
+    @inlinable @inline(__always)
+    public func rename(key: HalfHitch, with: HalfHitch) {
+        guard internalType == .dictionary else { return }
+        guard let index = keyArray.firstIndex(of: key) else { return }
+        keyArray[index] = with
     }
 
     @inlinable @inline(__always)
