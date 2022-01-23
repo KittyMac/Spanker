@@ -193,7 +193,7 @@ class SpankerTests: TestsBase {
             
             for idx in 0..<result.count {
                 if idx % 2 == 0 {
-                    XCTAssertEqual(result.valueArray[idx], result.valueArray[idx+1])
+                    XCTAssertEqual(result[idx], result[idx+1])
                 }
             }
         }
@@ -204,7 +204,7 @@ class SpankerTests: TestsBase {
             
             for idx in 0..<result.count {
                 if idx % 2 == 0 {
-                    XCTAssertNotEqual(result.valueArray[idx], result.valueArray[idx+1])
+                    XCTAssertNotEqual(result[idx], result[idx+1])
                 }
             }
         }

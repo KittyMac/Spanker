@@ -62,17 +62,60 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
+    // MARK: - Public
+
     public let type: JsonType
 
-    public var valueString: HalfHitch = HalfHitch.empty
-    public var valueInt: Int = 0
-    public var valueDouble: Double = 0.0
-    public var valueArray: [JsonElement] = []
-    public var keyArray: [HalfHitch] = []
+    public var stringValue: String? {
+        get {
+            guard type == .string else { return nil }
+            return valueString.toString()
+        }
+        set {
+            guard type == .string else { return }
+            guard let value = newValue else {
+                valueString = HalfHitch.empty
+                return
+            }
+            valueString = value.hitch().halfhitch()
+        }
+    }
 
-    @inlinable @inline(__always)
-    public var valueBool: Bool {
-        return valueInt == 0 ? false : true
+    public var intValue: Int? {
+        get {
+            guard type == .int else { return nil }
+            return valueInt
+        }
+        set {
+            guard type == .int else { return }
+            valueInt = newValue ?? 0
+        }
+    }
+
+    public var doubleValue: Double? {
+        get {
+            guard type == .double else { return nil }
+            return valueDouble
+        }
+        set {
+            guard type == .double else { return }
+            valueDouble = newValue ?? 0.0
+        }
+    }
+
+    public var boolValue: Bool? {
+        get {
+            guard type == .boolean else { return nil }
+            return valueInt != 0
+        }
+        set {
+            guard type == .boolean else { return }
+            guard let value = newValue else {
+                valueInt = 0
+                return
+            }
+            valueInt = value ? 1 : 0
+        }
     }
 
     @inlinable @inline(__always)
@@ -86,6 +129,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public subscript (index: Int) -> JsonElement? {
         get {
+            guard type == .array else { return nil }
+
             guard index >= 0 && index < valueArray.count else {
                 return nil
             }
@@ -96,6 +141,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public subscript (key: HalfHitch) -> JsonElement? {
         get {
+            guard type == .dictionary else { return nil }
+
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index]
             }
@@ -106,6 +153,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public subscript (key: Hitch) -> JsonElement? {
         get {
+            guard type == .dictionary else { return nil }
+
             if let index = keyArray.firstIndex(of: key.halfhitch()) {
                 return valueArray[index]
             }
@@ -115,6 +164,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     public func containsAll(keys: [HalfHitch]) -> Bool {
+        guard type == .dictionary else { return false }
+
         // returns true if all keys in keys are inside of the keyArray
         for keyA in keys {
             var keyExists = false
@@ -131,6 +182,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     public func containsAll(keys: [Hitch]) -> Bool {
+        guard type == .dictionary else { return false }
+
         // returns true if all keys in keys are inside of the keyArray
         for keyA in keys {
             var keyExists = false
@@ -147,11 +200,13 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     public func contains(key: HalfHitch) -> Bool {
+        guard type == .dictionary else { return false }
         return keyArray.contains(key)
     }
 
     @inlinable @inline(__always)
     public func contains(key: Hitch) -> Bool {
+        guard type == .dictionary else { return false }
         for existingKey in keyArray where existingKey == key {
             return true
         }
@@ -159,15 +214,56 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    internal func append(value: JsonElement) {
-        valueArray.append(value)
+    public func append(value: Any?) {
+        guard type == .array else { return }
+        append(value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
-    internal func append(key: HalfHitch,
-                         value: JsonElement) {
-        keyArray.append(key)
-        valueArray.append(value)
+    public func append(key: Hitch,
+                       value: Any?) {
+        guard type == .dictionary else { return }
+        append(key: key, value: JsonElement(unknown: value))
+    }
+
+    @inlinable @inline(__always)
+    public func append(key: String,
+                       value: Any?) {
+        guard type == .dictionary else { return }
+        append(key: key, value: JsonElement(unknown: value))
+    }
+
+    @inlinable @inline(__always)
+    public func append(key: HalfHitch,
+                       value: Any?) {
+        guard type == .dictionary else { return }
+        append(key: key, value: JsonElement(unknown: value))
+    }
+
+    @inlinable @inline(__always)
+    public func remove(index: Int) {
+        guard type == .array else { return }
+        guard index >= 0 && index < valueArray.count else { return }
+        valueArray.remove(at: index)
+    }
+
+    @inlinable @inline(__always)
+    public func remove(key: HalfHitch) {
+        guard type == .dictionary else { return }
+        guard let index = keyArray.firstIndex(of: key) else { return }
+        guard index >= 0 && index < valueArray.count else { return }
+        keyArray.remove(at: index)
+        valueArray.remove(at: index)
+    }
+
+    @inlinable @inline(__always)
+    public func remove(key: Hitch) {
+        remove(key: key.halfhitch())
+    }
+
+    @inlinable @inline(__always)
+    public func remove(key: String) {
+        remove(key: key.hitch().halfhitch())
     }
 
     @inlinable @inline(__always)
@@ -175,6 +271,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         guard let unknown = unknown else { type = .null; return }
 
         switch unknown {
+        case let value as JsonElement:
+            type = value.type
+            valueInt = value.valueInt
+            valueDouble = value.valueDouble
+            valueString = value.valueString
+            valueArray = value.valueArray
+            keyArray = value.keyArray
+            return
         case _ as NSNull:
             type = .null
             return
@@ -228,6 +332,42 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             type = .null
             return
         }
+    }
+
+    @inlinable @inline(__always)
+    public var description: String {
+        return json(hitch: Hitch()).description
+    }
+
+    // MARK: - Internal
+
+    @usableFromInline
+    internal var valueString: HalfHitch = HalfHitch.empty
+    @usableFromInline
+    internal var valueInt: Int = 0
+    @usableFromInline
+    internal var valueDouble: Double = 0.0
+    @usableFromInline
+    internal var valueArray: [JsonElement] = []
+    @usableFromInline
+    internal var keyArray: [HalfHitch] = []
+
+    @inlinable @inline(__always)
+    internal var valueBool: Bool {
+        return valueInt == 0 ? false : true
+    }
+
+    @inlinable @inline(__always)
+    internal func append(value: JsonElement) {
+        valueArray.append(value)
+    }
+
+    @inlinable @inline(__always)
+    internal func append(key: HalfHitch,
+                         value: JsonElement) {
+        guard type == .dictionary else { return }
+        keyArray.append(key)
+        valueArray.append(value)
     }
 
     @inlinable @inline(__always)
@@ -309,7 +449,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @discardableResult
     @inlinable @inline(__always)
-    public func json(hitch: Hitch) -> Hitch {
+    internal func json(hitch: Hitch) -> Hitch {
         switch type {
         case .null:
             hitch.append(UInt8.n)
@@ -361,11 +501,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             hitch.append(UInt8.closeBracket)
         }
         return hitch
-    }
-
-    @inlinable @inline(__always)
-    public var description: String {
-        return json(hitch: Hitch()).description
     }
 }
 
