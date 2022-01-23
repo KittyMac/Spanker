@@ -90,7 +90,7 @@ class SpankerTests: TestsBase {
     }
     
     func test_object_simple2() {
-        let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(LLONG_MAX)}"
+        let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(SIZE_MAX)}"
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
         }
