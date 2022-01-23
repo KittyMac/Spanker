@@ -136,6 +136,38 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
+    public var hitchValue: Hitch? {
+        get {
+            guard type == .string else { return nil }
+            return valueString.hitch()
+        }
+        set {
+            guard type == .string else { return }
+            guard let value = newValue else {
+                valueString = HalfHitch.empty
+                return
+            }
+            valueString = value.halfhitch()
+        }
+    }
+
+    @inlinable @inline(__always)
+    public var halfHitchValue: HalfHitch? {
+        get {
+            guard type == .string else { return nil }
+            return valueString
+        }
+        set {
+            guard type == .string else { return }
+            guard let value = newValue else {
+                valueString = HalfHitch.empty
+                return
+            }
+            valueString = value
+        }
+    }
+
+    @inlinable @inline(__always)
     public var intValue: Int? {
         get {
             guard type == .int else { return nil }
