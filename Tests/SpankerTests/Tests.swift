@@ -280,7 +280,7 @@ class SpankerTests: TestsBase {
         valuesJson.parsed { root in
             guard let root = root else { return }
             var total = 0
-            for value in root.rawValues {
+            for value in root.iterValues {
                 total += value.intValue ?? 0
             }
             XCTAssertEqual(total, 55)
@@ -291,7 +291,7 @@ class SpankerTests: TestsBase {
         keysJson.parsed { root in
             guard let root = root else { return }
             let combined = Hitch()
-            for key in root.rawKeys {
+            for key in root.iterKeys {
                 combined.append(key)
             }
             XCTAssertEqual(combined, "Hello World")

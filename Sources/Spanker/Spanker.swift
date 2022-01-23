@@ -36,17 +36,17 @@ public enum JsonType: UInt8 {
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible, Equatable {
-    
+
     public struct WalkingIterator: Sequence, IteratorProtocol {
         @usableFromInline
         internal var index = -1
-        
+
         @usableFromInline
         internal var countMinusOne = 0
 
         @usableFromInline
         internal let keyArray: [HalfHitch]
-        
+
         @usableFromInline
         internal let valueArray: [JsonElement]
 
@@ -76,7 +76,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
         @usableFromInline
         internal let countMinusOne: Int
-        
+
         @usableFromInline
         internal let keyArray: [HalfHitch]
 
@@ -149,7 +149,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public var type: JsonType {
         return internalType
     }
-        
+
     @inlinable @inline(__always)
     public var iterWalking: WalkingIterator {
         return WalkingIterator(keyArray: keyArray, valueArray: valueArray)
@@ -288,12 +288,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public subscript (key: Hitch) -> JsonElement? {
         get {
-            guard internalType == .dictionary else { return nil }
+            return self[key.halfhitch()]
+        }
+    }
 
-            if let index = keyArray.firstIndex(of: key.halfhitch()) {
-                return valueArray[index]
-            }
-            return nil
+    @inlinable @inline(__always)
+    public subscript (key: String) -> JsonElement? {
+        get {
+            return self[key.hitch().halfhitch()]
         }
     }
 
@@ -370,17 +372,17 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         guard internalType == .array else { return }
         valueArray.append(JsonElement(unknown: value))
     }
-    
+
     @inlinable @inline(__always)
     public func rename(key: String, with: String) {
         rename(key: key.hitch().halfhitch(), with: with.hitch().halfhitch())
     }
-    
+
     @inlinable @inline(__always)
     public func rename(key: Hitch, with: Hitch) {
         rename(key: key.halfhitch(), with: with.halfhitch())
     }
-    
+
     @inlinable @inline(__always)
     public func rename(key: HalfHitch, with: HalfHitch) {
         guard internalType == .dictionary else { return }
@@ -512,7 +514,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     // MARK: - Internal
-    
+
     @usableFromInline
     internal var internalType: JsonType
 
