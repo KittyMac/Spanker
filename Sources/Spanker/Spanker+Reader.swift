@@ -150,8 +150,8 @@ extension Spanker {
                             jsonElement.append(value: value)
                         } else if let key = key,
                                   jsonElement.type == .dictionary {
-                            jsonElement.append(key: key,
-                                               value: value)
+                            jsonElement.set(key: key,
+                                            value: value)
                         }
                     } else {
                         rootElement = value
@@ -181,7 +181,7 @@ extension Spanker {
                                 // if there is a parent element, we need to add this to it
                                 if let jsonElement = jsonElement {
                                     if let name = attributeName() {
-                                        jsonElement.append(key: name, value: nextElement)
+                                        jsonElement.set(key: name, value: nextElement)
                                     } else {
                                         jsonElement.append(value: nextElement)
                                     }

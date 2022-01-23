@@ -309,53 +309,33 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    public func replace(key: Hitch,
-                        value: Any?) {
-        guard type == .dictionary else { return }
-        replace(key: key.halfhitch(), value: JsonElement(unknown: value))
-    }
-
-    @inlinable @inline(__always)
-    public func replace(key: String,
-                       value: Any?) {
-        guard type == .dictionary else { return }
-        replace(key: key.hitch().halfhitch(), value: JsonElement(unknown: value))
-    }
-
-    @inlinable @inline(__always)
-    public func replace(key: HalfHitch,
-                       value: Any?) {
-        guard type == .dictionary else { return }
-        guard let index = keyArray.firstIndex(of: key) else { return }
-        keyArray[index] = key
-        valueArray[index] = JsonElement(unknown: value)
-    }
-
-    @inlinable @inline(__always)
     public func append(value: Any?) {
         guard type == .array else { return }
-        append(value: JsonElement(unknown: value))
+        valueArray.append(JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
-    public func append(key: Hitch,
-                       value: Any?) {
+    public func set(key: Hitch,
+                    value: Any?) {
         guard type == .dictionary else { return }
-        append(key: key, value: JsonElement(unknown: value))
+        set(key: key.halfhitch(),
+            value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
-    public func append(key: String,
-                       value: Any?) {
+    public func set(key: String,
+                    value: Any?) {
         guard type == .dictionary else { return }
-        append(key: key, value: JsonElement(unknown: value))
+        set(key: key.hitch().halfhitch(),
+            value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
-    public func append(key: HalfHitch,
-                       value: Any?) {
+    public func set(key: HalfHitch,
+                    value: Any?) {
         guard type == .dictionary else { return }
-        append(key: key, value: JsonElement(unknown: value))
+        set(key: key.hitch().halfhitch(),
+                    value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
@@ -477,15 +457,21 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     internal func append(value: JsonElement) {
+        guard type == .array else { return }
         valueArray.append(value)
     }
 
     @inlinable @inline(__always)
-    internal func append(key: HalfHitch,
-                         value: JsonElement) {
+    internal func set(key: HalfHitch,
+                      value: JsonElement) {
         guard type == .dictionary else { return }
-        keyArray.append(key)
-        valueArray.append(value)
+        if let index = keyArray.firstIndex(of: key) {
+            keyArray[index] = key
+            valueArray[index] = value
+        } else {
+            keyArray.append(key)
+            valueArray.append(value)
+        }
     }
 
     @inlinable @inline(__always)
