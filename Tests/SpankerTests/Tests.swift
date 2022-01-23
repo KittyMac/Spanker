@@ -275,7 +275,7 @@ class SpankerTests: TestsBase {
     }
     
     func test_iterators() {
-        let valuesJson = #"[0,1,2,3,4,5,6,7,8,9]"#
+        let valuesJson = #"[10,1,2,3,4,5,6,7,8,9]"#
         
         valuesJson.parsed { root in
             guard let root = root else { return }
@@ -283,7 +283,7 @@ class SpankerTests: TestsBase {
             for value in root.rawValues {
                 total += value.intValue ?? 0
             }
-            XCTAssertEqual(total, 45)
+            XCTAssertEqual(total, 55)
         }
         
         let keysJson = #"{"Hello":0," ":1,"World":2}"#

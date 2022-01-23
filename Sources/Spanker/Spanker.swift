@@ -60,14 +60,13 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     public struct ValuesIterator: Sequence, IteratorProtocol {
         @usableFromInline
-        internal var index = 0
+        internal var index = -1
 
         @usableFromInline
         internal let element: JsonElement
 
         @inlinable @inline(__always)
         internal init(element: JsonElement) {
-            self.index = 0
             self.element = element
         }
 
