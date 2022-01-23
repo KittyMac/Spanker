@@ -312,23 +312,23 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public func replace(key: Hitch,
                         value: Any?) {
         guard type == .dictionary else { return }
-        guard let index = keyArray.firstIndex(of: key.halfhitch()) else { return }
-        keyArray[index] = key.halfhitch()
-        valueArray[index] = JsonElement(unknown: value)
+        replace(key: key.halfhitch(), value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
     public func replace(key: String,
                        value: Any?) {
         guard type == .dictionary else { return }
-        replace(key: key, value: JsonElement(unknown: value))
+        replace(key: key.hitch().halfhitch(), value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
     public func replace(key: HalfHitch,
                        value: Any?) {
         guard type == .dictionary else { return }
-        replace(key: key, value: JsonElement(unknown: value))
+        guard let index = keyArray.firstIndex(of: key) else { return }
+        keyArray[index] = key
+        valueArray[index] = JsonElement(unknown: value)
     }
 
     @inlinable @inline(__always)
