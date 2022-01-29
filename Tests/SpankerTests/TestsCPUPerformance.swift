@@ -15,6 +15,7 @@ class SpankerTestsCPUPerformance: TestsBase {
     func test_baseline() {
         // 0.394
         // 0.395
+        // 0.377
         measure {
             if let obj = try? JSONSerialization.jsonObject(with: largeData, options: [.allowFragments]),
                let jsonArray = obj as? [Any] {
@@ -26,6 +27,7 @@ class SpankerTestsCPUPerformance: TestsBase {
     func test_large_load() {
         // 0.594
         // 0.588
+        // 0.625
         measure {
             largeData.parsed { results in
                 XCTAssertEqual(results?.count, 11351)

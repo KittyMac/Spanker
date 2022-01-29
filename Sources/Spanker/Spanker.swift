@@ -494,13 +494,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             return
         case let dict as [String: [Any?]]:
             internalType = .dictionary
-
-            keyArray.reserveCapacity(dict.count)
-            valueArray.reserveCapacity(dict.count)
-            for (key, value) in dict {
-                keyArray.append(key.hitch().halfhitch())
-                valueArray.append(JsonElement(unknown: value))
-            }
+            keyArray = dict.keys.map { $0.hitch().halfhitch() }
+            valueArray = dict.values.map { JsonElement(unknown: $0) }
             return
         default:
             internalType = .null
