@@ -262,44 +262,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    public subscript (index: Int) -> JsonElement? {
-        get {
-            guard internalType == .array else { return nil }
-
-            guard index >= 0 && index < valueArray.count else {
-                return nil
-            }
-            return valueArray[index]
-        }
-    }
-
-    @inlinable @inline(__always)
-    public subscript (key: HalfHitch) -> JsonElement? {
-        get {
-            guard internalType == .dictionary else { return nil }
-
-            if let index = keyArray.firstIndex(of: key) {
-                return valueArray[index]
-            }
-            return nil
-        }
-    }
-
-    @inlinable @inline(__always)
-    public subscript (key: Hitch) -> JsonElement? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    public subscript (key: String) -> JsonElement? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
     public func containsAll(keys: [HalfHitch]) -> Bool {
         guard internalType == .dictionary else { return false }
 
@@ -492,7 +454,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             internalType = .array
             valueArray = value.map { JsonElement(unknown: $0) }
             return
-        case let dict as [String: [Any?]]:
+        case let dict as [String: Any?]:
             internalType = .dictionary
             keyArray = dict.keys.map { $0.hitch().halfhitch() }
             valueArray = dict.values.map { JsonElement(unknown: $0) }

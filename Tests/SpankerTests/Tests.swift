@@ -27,6 +27,14 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_array_numbersAt() {
+        let json = #"[0,1,2,3]"#
+        json.parsed { result in
+            guard let result = result else { XCTFail(); return }
+            XCTAssertEqual(result[1], 1)
+        }
+    }
+    
     func test_array_numbers1() {
         let json = #"[0.5,1.2,2.7,3.7556367]"#
         json.parsed { result in
@@ -52,6 +60,14 @@ class SpankerTests: TestsBase {
         let json = #"{"foo":{"bar":"baz"}}"#
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
+        }
+    }
+    
+    func test_object_simpleAt() {
+        let json = #"{"foo":{"bar":"baz"}}"#
+        json.parsed { result in
+            guard let result = result else { XCTFail(); return }
+            XCTAssertEqual(JsonElement(unknown: ["bar": "baz"]), result["foo"])
         }
     }
     
@@ -194,7 +210,7 @@ class SpankerTests: TestsBase {
             
             for idx in 0..<result.count {
                 if idx % 2 == 0 {
-                    XCTAssertEqual(result[idx], result[idx+1])
+                    XCTAssertEqual(result[element: idx], result[element: idx+1])
                 }
             }
         }
@@ -205,7 +221,7 @@ class SpankerTests: TestsBase {
             
             for idx in 0..<result.count {
                 if idx % 2 == 0 {
-                    XCTAssertNotEqual(result[idx], result[idx+1])
+                    XCTAssertNotEqual(result[element: idx], result[element: idx+1])
                 }
             }
         }
