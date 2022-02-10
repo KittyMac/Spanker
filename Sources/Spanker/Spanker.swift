@@ -334,6 +334,24 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         guard internalType == .array else { return }
         valueArray.append(JsonElement(unknown: value))
     }
+    
+    @inlinable @inline(__always)
+    public func insert(value: Any?, at index: Int) {
+        guard internalType == .array else { return }
+        while valueArray.count <= index {
+            valueArray.append(JsonElement())
+        }
+        valueArray.insert(JsonElement(unknown: value), at: index)
+    }
+    
+    @inlinable @inline(__always)
+    public func set(value: Any?, at index: Int) {
+        guard internalType == .array else { return }
+        while valueArray.count <= index {
+            valueArray.append(JsonElement())
+        }
+        valueArray[index] = JsonElement(unknown: value)
+    }
 
     @inlinable @inline(__always)
     public func rename(key: String, with: String) {
@@ -468,6 +486,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public var description: String {
         return json(hitch: Hitch()).description
+    }
+    
+    @inlinable @inline(__always)
+    public func toString() -> String {
+        return json(hitch: Hitch()).toString()
     }
 
     // MARK: - Internal
