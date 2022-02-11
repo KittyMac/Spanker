@@ -15,6 +15,13 @@ public extension Hitch {
     }
 }
 
+public extension HalfHitch {
+    @inlinable @inline(__always)
+    func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
+        return Spanker.parsed(halfhitch: self, callback)
+    }
+}
+
 public extension String {
     @inlinable @inline(__always)
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
@@ -334,7 +341,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         guard internalType == .array else { return }
         valueArray.append(JsonElement(unknown: value))
     }
-    
+
     @inlinable @inline(__always)
     public func insert(value: Any?, at index: Int) {
         guard internalType == .array else { return }
@@ -343,7 +350,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
         valueArray.insert(JsonElement(unknown: value), at: index)
     }
-    
+
     @inlinable @inline(__always)
     public func set(value: Any?, at index: Int) {
         guard internalType == .array else { return }
@@ -487,7 +494,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public var description: String {
         return json(hitch: Hitch()).description
     }
-    
+
     @inlinable @inline(__always)
     public func toString() -> String {
         return json(hitch: Hitch()).toString()
@@ -675,6 +682,11 @@ public enum Spanker {
     }
 
     @inlinable @inline(__always)
+    public static func parsed<T>(halfhitch: HalfHitch, _ callback: (JsonElement?) -> T?) -> T? {
+        return Reader.parsed(halfhitch: halfhitch, callback)
+    }
+
+    @inlinable @inline(__always)
     public static func parsed<T>(data: Data, _ callback: (JsonElement?) -> T?) -> T? {
         return Reader.parsed(data: data, callback)
     }
@@ -682,6 +694,11 @@ public enum Spanker {
     @inlinable @inline(__always)
     public static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
         return Reader.parsed(string: string, callback)
+    }
+
+    @inlinable @inline(__always)
+    public static func parse(halfhitch: HalfHitch) -> JsonElement? {
+        return Reader.parse(halfhitch: halfhitch)
     }
 
 }
