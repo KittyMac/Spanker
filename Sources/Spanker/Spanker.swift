@@ -500,6 +500,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         return json(hitch: Hitch()).toString()
     }
 
+    @inlinable @inline(__always)
+    public func toHitch() -> Hitch {
+        return json(hitch: Hitch())
+    }
+
     // MARK: - Internal
 
     @usableFromInline
