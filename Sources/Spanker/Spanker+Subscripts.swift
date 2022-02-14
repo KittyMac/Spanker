@@ -42,34 +42,6 @@ public extension JsonElement {
         }
     }
 
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> JsonElement? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (element key: Hitch) -> JsonElement? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> JsonElement? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (element key: String) -> JsonElement? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
     // MARK: - HalfHitch
     @inlinable @inline(__always)
     subscript (index: Int) -> HalfHitch? {
@@ -97,34 +69,6 @@ public extension JsonElement {
 
     @inlinable @inline(__always)
     subscript (halfhitch key: HalfHitch) -> HalfHitch? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> HalfHitch? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (halfHitch key: Hitch) -> HalfHitch? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> HalfHitch? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (halfHitch key: String) -> HalfHitch? {
         get {
             return self[key]
         }
@@ -162,34 +106,6 @@ public extension JsonElement {
         }
     }
 
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> Hitch? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (hitch key: Hitch) -> Hitch? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> Hitch? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (hitch key: String) -> Hitch? {
-        get {
-            return self[key]
-        }
-    }
-
     // MARK: - String
     @inlinable @inline(__always)
     subscript (index: Int) -> String? {
@@ -217,34 +133,6 @@ public extension JsonElement {
 
     @inlinable @inline(__always)
     subscript (string key: HalfHitch) -> String? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> String? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (string key: Hitch) -> String? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> String? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (string key: String) -> String? {
         get {
             return self[key]
         }
@@ -282,34 +170,6 @@ public extension JsonElement {
         }
     }
 
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> Int? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (int key: Hitch) -> Int? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> Int? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (int key: String) -> Int? {
-        get {
-            return self[key]
-        }
-    }
-
     // MARK: - Double
     @inlinable @inline(__always)
     subscript (index: Int) -> Double? {
@@ -337,34 +197,6 @@ public extension JsonElement {
 
     @inlinable @inline(__always)
     subscript (double key: HalfHitch) -> Double? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> Double? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (double key: Hitch) -> Double? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> Double? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (double key: String) -> Double? {
         get {
             return self[key]
         }
@@ -402,31 +234,4 @@ public extension JsonElement {
         }
     }
 
-    @inlinable @inline(__always)
-    subscript (key: Hitch) -> Bool? {
-        get {
-            return self[key.halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (bool key: Hitch) -> Bool? {
-        get {
-            return self[key]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (key: String) -> Bool? {
-        get {
-            return self[key.hitch().halfhitch()]
-        }
-    }
-
-    @inlinable @inline(__always)
-    subscript (bool key: String) -> Bool? {
-        get {
-            return self[key]
-        }
-    }
 }

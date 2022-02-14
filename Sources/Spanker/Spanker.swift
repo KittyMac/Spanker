@@ -184,7 +184,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                 valueString = HalfHitch.empty
                 return
             }
-            valueString = value.hitch().halfhitch()
+            valueString = HalfHitch(string: value)
         }
     }
 
@@ -361,16 +361,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    public func rename(key: String, with: String) {
-        rename(key: key.hitch().halfhitch(), with: with.hitch().halfhitch())
-    }
-
-    @inlinable @inline(__always)
-    public func rename(key: Hitch, with: Hitch) {
-        rename(key: key.halfhitch(), with: with.halfhitch())
-    }
-
-    @inlinable @inline(__always)
     public func rename(key: HalfHitch, with: HalfHitch) {
         guard internalType == .dictionary else { return }
         guard let index = keyArray.firstIndex(of: key) else { return }
@@ -378,27 +368,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    public func set(key: Hitch,
-                    value: Any?) {
-        guard internalType == .dictionary else { return }
-        set(key: key.halfhitch(),
-            value: JsonElement(unknown: value))
-    }
-
-    @inlinable @inline(__always)
-    public func set(key: String,
-                    value: Any?) {
-        guard internalType == .dictionary else { return }
-        set(key: key.hitch().halfhitch(),
-            value: JsonElement(unknown: value))
-    }
-
-    @inlinable @inline(__always)
     public func set(key: HalfHitch,
                     value: Any?) {
         guard internalType == .dictionary else { return }
-        set(key: key.hitch().halfhitch(),
-                    value: JsonElement(unknown: value))
+        set(key: key,
+            value: JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
@@ -415,16 +389,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         guard index >= 0 && index < valueArray.count else { return }
         keyArray.remove(at: index)
         valueArray.remove(at: index)
-    }
-
-    @inlinable @inline(__always)
-    public func remove(key: Hitch) {
-        remove(key: key.halfhitch())
-    }
-
-    @inlinable @inline(__always)
-    public func remove(key: String) {
-        remove(key: key.hitch().halfhitch())
     }
 
     @inlinable @inline(__always)
@@ -465,15 +429,19 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             return
         case let value as Hitch:
             internalType = .string
-            valueString = Hitch(value).halfhitch()
+            valueString = value.halfhitch()
             return
         case let value as HalfHitch:
             internalType = .string
-            valueString = Hitch(value.hitch()).halfhitch()
+            valueString = value
+            return
+        case let value as StaticString:
+            internalType = .string
+            valueString = HalfHitch(stringLiteral: value)
             return
         case let value as String:
             internalType = .string
-            valueString = value.hitch().halfhitch()
+            valueString = HalfHitch(string: value)
             return
         case let value as [Any?]:
             internalType = .array
@@ -481,7 +449,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             return
         case let dict as [String: Any?]:
             internalType = .dictionary
-            keyArray = dict.keys.map { $0.hitch().halfhitch() }
+            keyArray = dict.keys.map { HalfHitch(string: $0) }
             valueArray = dict.values.map { JsonElement(unknown: $0) }
             return
         default:

@@ -67,7 +67,7 @@ class SpankerTests: TestsBase {
         let json = #"{"foo":{"bar":"baz"}}"#
         json.parsed { result in
             guard let result = result else { XCTFail(); return }
-            XCTAssertEqual(JsonElement(unknown: ["bar": "baz"]), result["foo"])
+            XCTAssertEqual(JsonElement(unknown: ["bar": "baz"]), result[element: "foo"])
         }
     }
     
@@ -84,15 +84,15 @@ class SpankerTests: TestsBase {
             guard let result = result else { XCTFail(); return }
             guard result.type == .dictionary else { XCTFail(); return }
             
-            let propertiesSuccess = [
-                "foo0".hitch(),
-                "foo1".hitch(),
-                "foo2".hitch(),
+            let propertiesSuccess: [Hitch] = [
+                "foo0",
+                "foo1",
+                "foo2",
             ]
-            let propertiesFail = [
-                "foo0".hitch(),
-                "fooA".hitch(),
-                "foo2".hitch(),
+            let propertiesFail: [Hitch] = [
+                "foo0",
+                "fooA",
+                "foo2",
             ]
             
             XCTAssertTrue(result.containsAll(keys: propertiesSuccess))
@@ -260,11 +260,11 @@ class SpankerTests: TestsBase {
     }
     
     func test_github1() {
-        let jsonData = try! Data(contentsOf: URL(fileURLWithPath: "/Volumes/Storage/large.minified.json"))
-        jsonData.parsed { result in
+        let jsonString = try! String(contentsOfFile: "/Volumes/Storage/large.minified.json")
+        jsonString.parsed { result in
             guard let result = result else { XCTFail(); return }
             
-            XCTAssertEqual(String(data: jsonData, encoding: .utf8)?.count, result.description.count)
+            XCTAssertEqual(jsonString.count, result.description.count)
         }
     }
     

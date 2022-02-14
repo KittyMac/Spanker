@@ -87,7 +87,7 @@ extension Spanker {
 
         @usableFromInline
         internal static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
-            return parsed(halfhitch: string.halfhitch(), callback)
+            return parsed(halfhitch: HalfHitch(string: string), callback)
         }
 
         @usableFromInline
@@ -128,7 +128,7 @@ extension Spanker {
                 guard jsonAttribute.valueIdx < endIdx else { return JsonElement(string: HalfHitch()) }
                 var valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
                 if jsonAttribute.shouldUnescape {
-                    valueString.unescape()
+                    valueString = valueString.unescaped()
                 }
                 return JsonElement(string: valueString)
             }
@@ -149,7 +149,7 @@ extension Spanker {
                 guard jsonAttribute.nameIdx > 0 else { return nil }
                 var name = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
                 if jsonAttribute.shouldUnescape {
-                    name.unescape()
+                    name = name.unescaped()
                 }
                 return name
             }
@@ -241,7 +241,7 @@ extension Spanker {
                             // grab the name of the attribute
                             var key = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
                             if jsonAttribute.shouldUnescape {
-                                key.unescape()
+                                key = key.unescaped()
                             }
 
                             // advance forward until we find the start of the next thing
