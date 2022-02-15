@@ -460,17 +460,17 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     public var description: String {
-        return json(hitch: Hitch()).description
+        return appendJson(hitch: Hitch(capacity: 1024)).description
     }
 
     @inlinable @inline(__always)
     public func toString() -> String {
-        return json(hitch: Hitch()).toString()
+        return appendJson(hitch: Hitch(capacity: 1024)).toString()
     }
 
     @inlinable @inline(__always)
     public func toHitch() -> Hitch {
-        return json(hitch: Hitch())
+        return appendJson(hitch: Hitch(capacity: 1024))
     }
 
     // MARK: - Internal
@@ -592,7 +592,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @discardableResult
     @inlinable @inline(__always)
-    internal func json(hitch: Hitch) -> Hitch {
+    public func appendJson(hitch: Hitch) -> Hitch {
         switch internalType {
         case .null:
             hitch.append(UInt8.n)
@@ -623,7 +623,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         case .array:
             hitch.append(UInt8.openBrace)
             for idx in 0..<valueArray.count {
-                valueArray[idx].json(hitch: hitch)
+                valueArray[idx].appendJson(hitch: hitch)
                 if idx < valueArray.count - 1 {
                     hitch.append(UInt8.comma)
                 }
@@ -636,7 +636,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                 hitch.append(keyArray[idx])
                 hitch.append(UInt8.doubleQuote)
                 hitch.append(UInt8.colon)
-                valueArray[idx].json(hitch: hitch)
+                valueArray[idx].appendJson(hitch: hitch)
                 if idx < keyArray.count - 1 {
                     hitch.append(UInt8.comma)
                 }
