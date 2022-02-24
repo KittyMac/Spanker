@@ -91,7 +91,7 @@ public extension JsonElement {
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index].halfHitchValue
             }
-            return HalfHitch()
+            return nil
         }
     }
 
@@ -151,7 +151,7 @@ public extension JsonElement {
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index].hitchValue
             }
-            return Hitch()
+            return nil
         }
     }
 
