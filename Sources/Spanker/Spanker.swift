@@ -392,6 +392,20 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
+    public func clean() {
+        for idx in stride(from: count-1, through: 0, by: -1) {
+            if valueArray[idx].type == .null {
+                if idx < keyArray.count {
+                    keyArray.remove(at: idx)
+                }
+                if idx < valueArray.count {
+                    valueArray.remove(at: idx)
+                }
+            }
+        }
+    }
+
+    @inlinable @inline(__always)
     public init(unknown: Any?) {
         guard let unknown = unknown else { internalType = .null; return }
 

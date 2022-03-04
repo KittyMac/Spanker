@@ -314,4 +314,37 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_element_clean0() {
+        let jsonElement = JsonElement(unknown: [
+            nil,
+            "Hello",
+            nil,
+            12345,
+            nil,
+            "World",
+            nil
+        ])
+        
+        jsonElement.clean()
+        
+        XCTAssertEqual(jsonElement.description, #"["Hello",12345,"World"]"#)
+    }
+
+    func test_element_clean1() {
+        let jsonElement = JsonElement(unknown: [
+            "key0": nil,
+            "key1": "Hello",
+            "key2": nil,
+            "key3": 12345,
+            "key4": nil,
+            "key5": "World",
+            "key6": nil
+        ])
+        
+        jsonElement.clean()
+        
+        XCTAssertEqual(jsonElement.count, 3)
+    }
+
+    
 }
