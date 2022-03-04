@@ -9,9 +9,7 @@ public extension JsonElement {
         get {
             guard internalType == .array else { return nil }
 
-            guard index >= 0 && index < valueArray.count else {
-                return nil
-            }
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index]
         }
     }
@@ -74,6 +72,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (index: Int) -> HalfHitch? {
         get {
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index].halfHitchValue
         }
     }
@@ -134,6 +133,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (index: Int) -> Hitch? {
         get {
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index].hitchValue
         }
     }
@@ -194,6 +194,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (index: Int) -> String? {
         get {
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index].stringValue
         }
     }
@@ -254,6 +255,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (index: Int) -> Int? {
         get {
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index].intValue
         }
     }
@@ -314,6 +316,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (index: Int) -> Double? {
         get {
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index].doubleValue
         }
     }
@@ -374,6 +377,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (index: Int) -> Bool? {
         get {
+            guard index >= 0 && index < valueArray.count else { return nil }
             return valueArray[index].boolValue
         }
     }
