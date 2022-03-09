@@ -273,7 +273,7 @@ public extension JsonElement {
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index].intValue
             }
-            return 0
+            return nil
         }
     }
 
@@ -334,7 +334,7 @@ public extension JsonElement {
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index].doubleValue
             }
-            return 0.0
+            return nil
         }
     }
 
