@@ -141,6 +141,29 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_unknown() {
+        XCTAssertEqual(JsonElement(unknown: [
+            nil,
+            NSNull(),
+            true,
+            false,
+            1,
+            1.0,
+            "hello",
+            [1,2,3],
+            ["a":"b"]
+        ]).toHitch(), #"[null,null,true,false,1,1.0,"hello",[1,2,3],{"a":"b"}]"#)
+    }
+    
+    func test_values() {
+        let element = JsonElement(unknown: [:])
+        element.set(key: "a", value: 1)
+        element.set(key: "b", value: 2)
+        element.set(key: "c", value: 3)
+        element.set(key: "d", value: 4)
+        XCTAssertEqual(element.values.toHitch(), #"[1,2,3,4]"#)
+    }
+    
     func test_boolean() {
         let jsons = [
             #"true"#,

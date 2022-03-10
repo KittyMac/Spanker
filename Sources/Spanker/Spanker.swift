@@ -261,6 +261,27 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
+    public var values: JsonElement {
+        get {
+            switch internalType {
+            case .array, .dictionary:
+                return JsonElement(array: valueArray)
+            case .int:
+                return JsonElement(unknown: valueInt)
+            case .boolean:
+                return JsonElement(unknown: valueBool)
+            case .double:
+                return JsonElement(unknown: valueDouble)
+            case .null:
+                return JsonElement(unknown: nil)
+            case .string:
+                return JsonElement(unknown: valueString)
+            }
+
+        }
+    }
+
+    @inlinable @inline(__always)
     public var count: Int {
         if internalType == .string {
             return valueString.count
@@ -421,6 +442,10 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         case _ as NSNull:
             internalType = .null
             return
+        case let value as Bool:
+            internalType = .boolean
+            valueInt = value == true ? 1 : 0
+            return
         case let value as Int:
             internalType = .int
             valueInt = value
@@ -436,10 +461,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         case let value as NSNumber:
             internalType = .double
             valueDouble = value.doubleValue
-            return
-        case let value as Bool:
-            internalType = .boolean
-            valueInt = value == true ? 1 : 0
             return
         case let value as Hitch:
             internalType = .string
