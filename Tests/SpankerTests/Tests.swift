@@ -368,6 +368,39 @@ class SpankerTests: TestsBase {
         
         XCTAssertEqual(jsonElement.count, 3)
     }
+    
+    func test_sortKeys() {
+        let jsonA = JsonElement(unknown: [
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": 4,
+            "child": [
+                "d": 4,
+                "c": 3,
+                "b": 2,
+                "a": 1
+            ]
+        ])
+        
+        let jsonB = JsonElement(unknown: [
+            "child": [
+                "d": 4,
+                "c": 3,
+                "b": 2,
+                "a": 1
+            ],
+            "d": 4,
+            "c": 3,
+            "b": 2,
+            "a": 1
+        ])
+        
+        jsonA.sortKeys()
+        jsonB.sortKeys()
+        
+        XCTAssertEqual(jsonA.toHitch(), jsonB.toHitch())
+    }
 
     
 }

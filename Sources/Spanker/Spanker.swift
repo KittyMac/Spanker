@@ -595,6 +595,22 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         valueArray.reserveCapacity(32)
     }
 
+    public func sortKeys() {
+        guard type == .dictionary || type == .array else { return }
+
+        if type == .dictionary {
+            let combined = zip(keyArray, valueArray).sorted { $0.0 < $1.0 }
+            keyArray = combined.map { $0.0 }
+            valueArray = combined.map { $0.1 }
+        }
+
+        for value in iterValues {
+            if value.type == .dictionary || value.type == .array {
+                value.sortKeys()
+            }
+        }
+    }
+
     private var cachedReify: Any?
     public func reify(_ useNSNull: Bool = false) -> Any? {
         guard cachedReify == nil else { return cachedReify }
