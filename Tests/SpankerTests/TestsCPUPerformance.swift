@@ -30,6 +30,7 @@ class SpankerTestsCPUPerformance: TestsBase {
         // 0.588
         // 0.625
         // 0.684
+        // 0.762
         measure {
             largeData.parsed { results in
                 XCTAssertEqual(results?.count, 11351)

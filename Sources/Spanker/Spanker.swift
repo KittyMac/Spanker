@@ -662,34 +662,34 @@ public final class JsonElement: NSObject {
         }
     }
 
-    private var cachedReify: Any?
+    // private var cachedReify: Any?
     public func reify(_ useNSNull: Bool = false) -> Any? {
-        guard cachedReify == nil else { return cachedReify }
+        // guard cachedReify == nil else { return cachedReify }
 
         switch internalType {
         case .null:
             if useNSNull == false {
                 return nil
             }
-            cachedReify = NSNull()
+            return NSNull()
         case .boolean:
-            cachedReify = valueInt != 0
+            return valueInt != 0
         case .string:
-            cachedReify = valueString.toString()
+            return valueString.toString()
         case .int:
-            cachedReify = valueInt
+            return valueInt
         case .double:
-            cachedReify = valueDouble
+            return valueDouble
         case .array:
-            cachedReify = valueArray.map { $0.reify() }
+            return valueArray.map { $0.reify() }
         case .dictionary:
-            cachedReify = [String: Any?](uniqueKeysWithValues: zip(
+            return [String: Any?](uniqueKeysWithValues: zip(
                 keyArray.map { $0.toString() },
                 valueArray.map { $0.reify() }
             ))
         }
 
-        return cachedReify
+        // return cachedReify
     }
 
     @discardableResult
