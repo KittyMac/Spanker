@@ -42,7 +42,7 @@ public enum JsonType: UInt8 {
 // Note: this is 112 bytes according to the profiler
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
-public final class JsonElement: CustomStringConvertible, Equatable {
+public final class JsonElement: NSObject {
 
     public struct WalkingIterator: Sequence, IteratorProtocol {
         @usableFromInline
@@ -125,7 +125,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
     public static func null() -> JsonElement {
         return JsonElement()
     }
@@ -147,6 +146,29 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             return lhs.valueArray == rhs.valueArray
         case .dictionary:
             return lhs.keyArray == rhs.keyArray && lhs.valueArray == rhs.valueArray
+        }
+    }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let object0 = object else { return false }
+        guard let object1 = object0 as? JsonElement else { return false }
+
+        guard type == object1.type else { return false }
+        switch type {
+        case .null:
+            return true
+        case .boolean:
+            return valueInt == object1.valueInt
+        case .string:
+            return valueString == object1.valueString
+        case .int:
+            return valueInt == object1.valueInt
+        case .double:
+            return valueDouble == object1.valueDouble
+        case .array:
+            return valueArray == object1.valueArray
+        case .dictionary:
+            return keyArray == object1.keyArray && valueArray == object1.valueArray
         }
     }
 
@@ -367,7 +389,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public func insert(value: Any?, at index: Int) {
         guard internalType == .array else { return }
         while valueArray.count <= index {
-            valueArray.append(JsonElement())
+            valueArray.append(JsonElement.null())
         }
         valueArray.insert(JsonElement(unknown: value), at: index)
     }
@@ -376,7 +398,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public func set(value: Any?, at index: Int) {
         guard internalType == .array else { return }
         while valueArray.count <= index {
-            valueArray.append(JsonElement())
+            valueArray.append(JsonElement.null())
         }
         valueArray[index] = JsonElement(unknown: value)
     }
@@ -494,7 +516,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @inlinable @inline(__always)
-    public var description: String {
+    public override var description: String {
         return exportTo(hitch: Hitch(capacity: 1024)).description
     }
 
@@ -548,8 +570,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
-    init() {
+    override init() {
         internalType = .null
     }
 
