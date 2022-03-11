@@ -402,9 +402,15 @@ class SpankerTests: TestsBase {
         XCTAssertEqual(jsonA.toHitch(), jsonB.toHitch())
     }
     
-    func test_sortAll() {
+    func test_sortAll0() {
         let jsonA = JsonElement(unknown: [
             "array": [
+                [
+                    "a": 1,
+                    "d": 4,
+                    "c": 3,
+                    "b": 2
+                ],
                 "12345",
                 false,
                 [0,1,2],
@@ -437,10 +443,47 @@ class SpankerTests: TestsBase {
                 false,
                 "54321",
                 [2,1,0],
-                42
+                42,
+                [
+                    "d": 4,
+                    "c": 3,
+                    "b": 2,
+                    "a": 1
+                ]
             ],
             "d": 4,
             "c": 3,
+            "b": 2,
+            "a": 1
+        ])
+        
+        jsonA.sortAll()
+        jsonB.sortAll()
+                
+        XCTAssertEqual(jsonA.toHitch(), jsonB.toHitch())
+    }
+    
+    func test_sortAll1() {
+        let jsonA = JsonElement(unknown: [
+            "a": 1,
+            "d": 4,
+            "c": [
+                1,
+                4,
+                3,
+                2
+            ],
+            "b": 2
+        ])
+        
+        let jsonB = JsonElement(unknown: [
+            "d": 4,
+            "c": [
+                4,
+                3,
+                2,
+                1
+            ],
             "b": 2,
             "a": 1
         ])

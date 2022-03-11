@@ -615,9 +615,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         guard type == .dictionary || type == .array else { return }
 
         for value in iterValues {
-            if value.type == .dictionary || value.type == .array {
-                value.sortAll()
-            }
+            value.sortAll()
         }
 
         if type == .dictionary {
@@ -630,7 +628,16 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             // serialize all values to their JSON strings
             // sort the JSON strings
             // deserialize all of the JSON strings
-            valueArray = valueArray.map { $0.toHitch() }.sorted().map { Spanker.parse(halfhitch: $0.halfhitch())?.reify() }.map { JsonElement(unknown: $0) }
+            let indexArray = 0..<valueArray.count
+            let combined = zip(indexArray, valueArray.map { $0.toHitch() }).sorted { $0.1 < $1.1 }
+
+            var newValueArray = [JsonElement]()
+
+            for entry in combined {
+                newValueArray.append(valueArray[entry.0])
+            }
+
+            valueArray = newValueArray
         }
     }
 
