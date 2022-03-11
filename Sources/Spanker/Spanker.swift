@@ -598,21 +598,27 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     public func sortKeys() {
         guard type == .dictionary || type == .array else { return }
 
-        if type == .dictionary {
-            let combined = zip(keyArray, valueArray).sorted { $0.0 < $1.0 }
-            keyArray = combined.map { $0.0 }
-            valueArray = combined.map { $0.1 }
-        }
-
         for value in iterValues {
             if value.type == .dictionary || value.type == .array {
                 value.sortKeys()
             }
         }
+
+        if type == .dictionary {
+            let combined = zip(keyArray, valueArray).sorted { $0.0 < $1.0 }
+            keyArray = combined.map { $0.0 }
+            valueArray = combined.map { $0.1 }
+        }
     }
 
     public func sortAll() {
         guard type == .dictionary || type == .array else { return }
+
+        for value in iterValues {
+            if value.type == .dictionary || value.type == .array {
+                value.sortAll()
+            }
+        }
 
         if type == .dictionary {
             let combined = zip(keyArray, valueArray).sorted { $0.0 < $1.0 }
@@ -625,12 +631,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             // sort the JSON strings
             // deserialize all of the JSON strings
             valueArray = valueArray.map { $0.toHitch() }.sorted().map { Spanker.parse(halfhitch: $0.halfhitch())?.reify() }.map { JsonElement(unknown: $0) }
-        }
-
-        for value in iterValues {
-            if value.type == .dictionary || value.type == .array {
-                value.sortAll()
-            }
         }
     }
 
