@@ -7,6 +7,7 @@ import Hitch
 class SpankerTests: TestsBase {
     
     func test_cast_any() {
+                
         let unknown: Any? = [
             "test": JsonElement(unknown: ["String": Hitch(string: "Hitch")])
         ]

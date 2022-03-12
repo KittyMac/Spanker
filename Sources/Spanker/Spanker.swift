@@ -39,10 +39,241 @@ public enum JsonType: UInt8 {
     case dictionary
 }
 
+// MARK: - JsonElementable
+
+public protocol JsonElementable {
+    func toJsonElement() -> JsonElement
+    func fillJsonElement(internalType: inout JsonType,
+                         valueInt: inout Int,
+                         valueDouble: inout Double,
+                         valueString: inout HalfHitch,
+                         valueArray: inout [JsonElement],
+                         keyArray: inout [HalfHitch])
+}
+
+extension JsonElement: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return self
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = self.internalType
+        valueInt = self.valueInt
+        valueDouble = self.valueDouble
+        valueString = self.valueString
+        valueArray = self.valueArray
+        keyArray = self.keyArray
+    }
+}
+
+extension String: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(string: HalfHitch(string: self))
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .string
+        valueString = HalfHitch(string: self)
+    }
+}
+
+extension StaticString: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(string: HalfHitch(stringLiteral: self))
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .string
+        valueString = HalfHitch(stringLiteral: self)
+    }
+}
+
+extension Hitch: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(string: self.halfhitch())
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .string
+        valueString = self.halfhitch()
+    }
+}
+
+extension HalfHitch: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(string: self)
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .string
+        valueString = self
+    }
+}
+
+extension Int: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(int: self)
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .int
+        valueInt = self
+    }
+}
+
+extension Double: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(double: self)
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .double
+        valueDouble = self
+    }
+}
+
+extension Bool: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(bool: self)
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .boolean
+        valueInt = self == true ? 1 : 0
+    }
+}
+
+extension NSNull: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement.null()
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .null
+    }
+}
+
+extension NSNumber: JsonElementable {
+    @inlinable @inline(__always)
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(double: doubleValue)
+    }
+
+    @inlinable @inline(__always)
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .double
+        valueDouble = self.doubleValue
+    }
+}
+
+public typealias JsonElementableArray = [JsonElementable?]
+extension JsonElementableArray: JsonElementable {
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(array: map { $0?.toJsonElement() ?? JsonElement.null() })
+    }
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .array
+        valueArray = self.map { JsonElement(unknown: $0) }
+    }
+}
+
+public typealias JsonElementableDictionary = [String: JsonElementable?]
+extension JsonElementableDictionary: JsonElementable {
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(keys: keys.map { HalfHitch(string: $0) },
+                           values: values.map { $0?.toJsonElement() ?? JsonElement.null() })
+    }
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .dictionary
+        keyArray = self.keys.map { HalfHitch(string: $0) }
+        valueArray = self.values.map { JsonElement(unknown: $0) }
+    }
+}
+
+// MARK: - JsonElement
+
 // Note: this is 112 bytes according to the profiler
 // Note: this is 96 bytes according to the profiler
 // Note: this is 80 bytes according to the profiler
-public final class JsonElement: NSObject {
+public final class JsonElement: CustomStringConvertible, Equatable {
 
     public struct WalkingIterator: Sequence, IteratorProtocol {
         @usableFromInline
@@ -146,29 +377,6 @@ public final class JsonElement: NSObject {
             return lhs.valueArray == rhs.valueArray
         case .dictionary:
             return lhs.keyArray == rhs.keyArray && lhs.valueArray == rhs.valueArray
-        }
-    }
-
-    public override func isEqual(_ object: Any?) -> Bool {
-        guard let object0 = object else { return false }
-        guard let object1 = object0 as? JsonElement else { return false }
-
-        guard type == object1.type else { return false }
-        switch type {
-        case .null:
-            return true
-        case .boolean:
-            return valueInt == object1.valueInt
-        case .string:
-            return valueString == object1.valueString
-        case .int:
-            return valueInt == object1.valueInt
-        case .double:
-            return valueDouble == object1.valueDouble
-        case .array:
-            return valueArray == object1.valueArray
-        case .dictionary:
-            return keyArray == object1.keyArray && valueArray == object1.valueArray
         }
     }
 
@@ -373,20 +581,20 @@ public final class JsonElement: NSObject {
     }
 
     @inlinable @inline(__always)
-    public func replace(at: Int, value: Any?) {
+    public func replace(at: Int, value: JsonElementable?) {
         guard internalType == .array else { return }
         guard at >= 0 && at < valueArray.count else { return }
         valueArray[at] = JsonElement(unknown: value)
     }
 
     @inlinable @inline(__always)
-    public func append(value: Any?) {
+    public func append(value: JsonElementable?) {
         guard internalType == .array else { return }
         valueArray.append(JsonElement(unknown: value))
     }
 
     @inlinable @inline(__always)
-    public func insert(value: Any?, at index: Int) {
+    public func insert(value: JsonElementable?, at index: Int) {
         guard internalType == .array else { return }
         while valueArray.count <= index {
             valueArray.append(JsonElement.null())
@@ -395,7 +603,7 @@ public final class JsonElement: NSObject {
     }
 
     @inlinable @inline(__always)
-    public func set(value: Any?, at index: Int) {
+    public func set(value: JsonElementable?, at index: Int) {
         guard internalType == .array else { return }
         while valueArray.count <= index {
             valueArray.append(JsonElement.null())
@@ -412,10 +620,10 @@ public final class JsonElement: NSObject {
 
     @inlinable @inline(__always)
     public func set(key: HalfHitch,
-                    value: Any?) {
+                    value: JsonElementable?) {
         guard internalType == .dictionary else { return }
         set(key: key,
-            value: JsonElement(unknown: value))
+            element: value?.toJsonElement() ?? JsonElement.null())
     }
 
     @inlinable @inline(__always)
@@ -449,74 +657,18 @@ public final class JsonElement: NSObject {
     }
 
     @inlinable @inline(__always)
-    public init(unknown: Any?) {
-        guard let unknown = unknown else { internalType = .null; return }
-
-        switch unknown {
-        case let value as JsonElement:
-            internalType = value.internalType
-            valueInt = value.valueInt
-            valueDouble = value.valueDouble
-            valueString = value.valueString
-            valueArray = value.valueArray
-            keyArray = value.keyArray
-            return
-        case _ as NSNull:
-            internalType = .null
-            return
-        case let value as Bool:
-            internalType = .boolean
-            valueInt = value == true ? 1 : 0
-            return
-        case let value as Int:
-            internalType = .int
-            valueInt = value
-            return
-        case let value as Double:
-            internalType = .double
-            valueDouble = value
-            return
-        case let value as Float:
-            internalType = .double
-            valueDouble = Double(value)
-            return
-        case let value as NSNumber:
-            internalType = .double
-            valueDouble = value.doubleValue
-            return
-        case let value as Hitch:
-            internalType = .string
-            valueString = value.halfhitch()
-            return
-        case let value as HalfHitch:
-            internalType = .string
-            valueString = value
-            return
-        case let value as StaticString:
-            internalType = .string
-            valueString = HalfHitch(stringLiteral: value)
-            return
-        case let value as String:
-            internalType = .string
-            valueString = HalfHitch(string: value)
-            return
-        case let value as [Any?]:
-            internalType = .array
-            valueArray = value.map { JsonElement(unknown: $0) }
-            return
-        case let dict as [String: Any?]:
-            internalType = .dictionary
-            keyArray = dict.keys.map { HalfHitch(string: $0) }
-            valueArray = dict.values.map { JsonElement(unknown: $0) }
-            return
-        default:
-            internalType = .null
-            return
-        }
+    public init(unknown: JsonElementable?) {
+        internalType = .null
+        unknown?.fillJsonElement(internalType: &internalType,
+                                 valueInt: &valueInt,
+                                 valueDouble: &valueDouble,
+                                 valueString: &valueString,
+                                 valueArray: &valueArray,
+                                 keyArray: &keyArray)
     }
 
     @inlinable @inline(__always)
-    public override var description: String {
+    public var description: String {
         return exportTo(hitch: Hitch(capacity: 1024)).description
     }
 
@@ -559,18 +711,19 @@ public final class JsonElement: NSObject {
 
     @inlinable @inline(__always)
     internal func set(key: HalfHitch,
-                      value: JsonElement) {
+                      element: JsonElement) {
         guard internalType == .dictionary else { return }
         if let index = keyArray.firstIndex(of: key) {
             keyArray[index] = key
-            valueArray[index] = value
+            valueArray[index] = element
         } else {
             keyArray.append(key)
-            valueArray.append(value)
+            valueArray.append(element)
         }
     }
 
-    override init() {
+    @inlinable @inline(__always)
+    init() {
         internalType = .null
     }
 
