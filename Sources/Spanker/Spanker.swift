@@ -824,19 +824,19 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             if useNSNull == false {
                 return nil
             }
-            return NSNull()
+            cachedReify = NSNull()
         case .boolean:
-            return valueInt != 0
+            cachedReify = valueInt != 0
         case .string:
-            return valueString.toString()
+            cachedReify = valueString.toString()
         case .int:
-            return valueInt
+            cachedReify = valueInt
         case .double:
-            return valueDouble
+            cachedReify = valueDouble
         case .array:
-            return valueArray.map { $0.reify() }
+            cachedReify = valueArray.map { $0.reify() }
         case .dictionary:
-            return [String: Any?](uniqueKeysWithValues: zip(
+            cachedReify = [String: Any?](uniqueKeysWithValues: zip(
                 keyArray.map { $0.toString() },
                 valueArray.map { $0.reify() }
             ))
