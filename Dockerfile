@@ -47,5 +47,5 @@ COPY ./Sources ./Sources
 COPY ./Tests ./Tests
 
 RUN swift package update
-RUN swift build --configuration release
+#RUN swift build --configuration release
 RUN swift test -v

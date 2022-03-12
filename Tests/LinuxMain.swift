@@ -3,5 +3,8 @@ import XCTest
 @testable import SpankerTests
 
 XCTMain([
-    //testCase(ArrayIndexFilterTest.allTests),
+    testCase(SpankerTests.allTests)
+    //testCase(HitchFormatTests.allTests),
+    //testCase(HitchTests.allTests),
+    //testCase(HitchPerformanceTests.allTests)
 ])

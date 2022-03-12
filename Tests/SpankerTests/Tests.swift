@@ -6,6 +6,32 @@ import Hitch
 
 class SpankerTests: TestsBase {
     
+    func test_cast_any() {
+        let unknown: Any? = [
+            "test": JsonElement(unknown: ["String": Hitch(string: "Hitch")])
+        ]
+        
+        // note: linux will "crash" in here with
+        // Could not cast value of type 'Hitch.Hitch' (0x56093e670f90) to 'Foundation.NSObject' (0x7f4ca74c5bd8).
+        // From research it appears that any class type in swift on Linux which can be stored in a hashable (like
+        // a set or a dictionary) must inherit from NSObject. This is super unfortunate and annoying, hopefully
+        // it will be fixed in the future. Until them, Hitch is now a subclass of NSObject to avoid
+        // this runtime crash
+        if let unknown = unknown {
+            switch unknown {
+            case _ as NSNull:
+                return
+            case let _ as Hitch:
+                break
+            case let _ as JsonElement:
+                break
+            default:
+                print("DEFAULT")
+                break
+            }
+        }
+    }
+    
     func test_empty_array() {
         let json = #"[]"#
         json.parsed { result in
@@ -107,7 +133,7 @@ class SpankerTests: TestsBase {
     }
     
     func test_object_simple2() {
-        let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(INT64_MAX)}"
+        let json = "{\"int-max-property\":\(UINT32_MAX),\"long-max-property\":\(UINT32_MAX)}"
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
         }
@@ -495,4 +521,48 @@ class SpankerTests: TestsBase {
     }
 
     
+}
+
+
+extension SpankerTests {
+    static var allTests: [(String, (SpankerTests) -> () throws -> Void)] {
+        return [
+            ("test_cast_any", test_cast_any),
+            ("test_empty_array", test_empty_array),
+            ("test_empty_object", test_empty_object),
+            ("test_array_numbers0", test_array_numbers0),
+            ("test_array_numbersAt", test_array_numbersAt),
+            ("test_array_numbers1", test_array_numbers1),
+            ("test_array_strings0", test_array_strings0),
+            ("test_object_simple0", test_object_simple0),
+            ("test_object_simple1", test_object_simple1),
+            ("test_object_simpleAt", test_object_simpleAt),
+            ("test_array_objects_simple1", test_array_objects_simple1),
+            ("test_containsAll", test_containsAll),
+            ("test_object_simple2", test_object_simple2),
+            ("test_object_simple3", test_object_simple3),
+            ("test_object_simple4", test_object_simple4),
+            ("test_object_simple5", test_object_simple5),
+            ("test_object_simple6", test_object_simple6),
+            ("test_unknown", test_unknown),
+            ("test_values", test_values),
+            ("test_boolean", test_boolean),
+            ("test_int", test_int),
+            ("test_double", test_double),
+            ("test_string", test_string),
+            ("test_test0", test_test0),
+            ("test_jsonElementEquality", test_jsonElementEquality),
+            ("test_escaped_string", test_escaped_string),
+            ("test_escaped_strings", test_escaped_strings),
+            ("test_github0", test_github0),
+            ("test_compliance0", test_compliance0),
+            ("test_many", test_many),
+            ("test_iterators", test_iterators),
+            ("test_element_clean0", test_element_clean0),
+            ("test_element_clean1", test_element_clean1),
+            ("test_sortKeys", test_sortKeys),
+            ("test_sortAll0", test_sortAll0),
+            ("test_sortAll1", test_sortAll1)
+        ]
+    }
 }
