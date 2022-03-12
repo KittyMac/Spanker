@@ -815,9 +815,9 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    // private var cachedReify: Any?
+    private var cachedReify: Any?
     public func reify(_ useNSNull: Bool = false) -> Any? {
-        // guard cachedReify == nil else { return cachedReify }
+        guard cachedReify == nil else { return cachedReify }
 
         switch internalType {
         case .null:
@@ -842,7 +842,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             ))
         }
 
-        // return cachedReify
+        return cachedReify
     }
 
     @discardableResult
