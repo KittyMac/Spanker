@@ -815,6 +815,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
+    public func sortArray(_ comparator: (JsonElement, JsonElement) -> Bool) {
+        guard type == .array else { return }
+        valueArray.sort(by: comparator)
+    }
+
     private var cachedReify: Any?
     public func reify(_ useNSNull: Bool = false) -> Any? {
         guard cachedReify == nil else { return cachedReify }

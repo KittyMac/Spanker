@@ -520,6 +520,23 @@ class SpankerTests: TestsBase {
                 
         XCTAssertEqual(jsonA.toHitch(), jsonB.toHitch())
     }
+    
+    func test_sortArray() {
+        let jsonA = JsonElement(unknown: [
+            1,
+            4,
+            5,
+            2
+        ])
+        
+        jsonA.sortArray { lhs, rhs in
+            guard let lhsInt = lhs.intValue else { return true }
+            guard let rhsInt = rhs.intValue else { return true }
+            return lhsInt < rhsInt
+        }
+        
+        XCTAssertEqual(jsonA.toHitch(), #"[1,2,4,5]"#)
+    }
 
     
 }
