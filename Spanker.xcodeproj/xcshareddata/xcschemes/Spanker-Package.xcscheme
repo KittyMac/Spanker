@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Spanker::Spanker"
+               BlueprintIdentifier = "spanker::Spanker"
                BuildableName = "Spanker.framework"
                BlueprintName = "Spanker"
                ReferencedContainer = "container:Spanker.xcodeproj">
@@ -32,7 +32,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "Spanker::SpankerTests"
+               BlueprintIdentifier = "spanker::SpankerTests"
                BuildableName = "SpankerTests.xctest"
                BlueprintName = "SpankerTests"
                ReferencedContainer = "container:Spanker.xcodeproj">
