@@ -372,6 +372,69 @@ public extension JsonElement {
             return self[key]
         }
     }
+    
+    // MARK: - Float
+    @inlinable @inline(__always)
+    subscript (index: Int) -> Float? {
+        get {
+            guard index >= 0 && index < valueArray.count else { return nil }
+            if let value = valueArray[index].doubleValue { return Float(value) }
+            return nil
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (float index: Int) -> Float? {
+        get {
+            return self[index]
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (key: HalfHitch) -> Float? {
+        get {
+            if let index = keyArray.firstIndex(of: key),
+               let value = valueArray[index].doubleValue {
+                return Float(value)
+            }
+            return nil
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (float key: HalfHitch) -> Float? {
+        get {
+            return self[key]
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (key: Hitch) -> Float? {
+        get {
+            return self[key.halfhitch()]
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (float key: Hitch) -> Float? {
+        get {
+            return self[key]
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (key: String) -> Float? {
+        get {
+            return self[HalfHitch(string: key)]
+        }
+    }
+
+    @inlinable @inline(__always)
+    subscript (float key: String) -> Float? {
+        get {
+            return self[key]
+        }
+    }
 
     // MARK: - Bool
     @inlinable @inline(__always)
