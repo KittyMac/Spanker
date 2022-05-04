@@ -212,7 +212,7 @@ public extension JsonElement {
             if let index = keyArray.firstIndex(of: key) {
                 return valueArray[index].stringValue
             }
-            return ""
+            return nil
         }
     }
 
