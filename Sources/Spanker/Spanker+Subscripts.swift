@@ -317,7 +317,9 @@ public extension JsonElement {
     subscript (index: Int) -> Double? {
         get {
             guard index >= 0 && index < valueArray.count else { return nil }
-            return valueArray[index].doubleValue
+            if let value = valueArray[index].doubleValue { return value }
+            if let value = valueArray[index].intValue { return Double(value) }
+            return nil
         }
     }
 
@@ -332,7 +334,8 @@ public extension JsonElement {
     subscript (key: HalfHitch) -> Double? {
         get {
             if let index = keyArray.firstIndex(of: key) {
-                return valueArray[index].doubleValue
+                if let value = valueArray[index].doubleValue { return value }
+                if let value = valueArray[index].intValue { return Double(value) }
             }
             return nil
         }
@@ -379,6 +382,7 @@ public extension JsonElement {
         get {
             guard index >= 0 && index < valueArray.count else { return nil }
             if let value = valueArray[index].doubleValue { return Float(value) }
+            if let value = valueArray[index].intValue { return Float(value) }
             return nil
         }
     }
@@ -393,9 +397,9 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: HalfHitch) -> Float? {
         get {
-            if let index = keyArray.firstIndex(of: key),
-               let value = valueArray[index].doubleValue {
-                return Float(value)
+            if let index = keyArray.firstIndex(of: key) {
+                if let value = valueArray[index].doubleValue { return Float(value) }
+                if let value = valueArray[index].intValue { return Float(value) }
             }
             return nil
         }
