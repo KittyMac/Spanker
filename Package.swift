@@ -3,24 +3,24 @@
 import PackageDescription
 
 let package = Package(
-    name: "Spanker",
+    name: "SpankerKit",
     platforms: [
         .macOS(.v10_13), .iOS(.v11)
     ],
     products: [
-        .library(name: "Spanker", targets: ["Spanker"])
+        .library(name: "SpankerKit", targets: ["SpankerKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/KittyMac/Hitch.git", .upToNextMinor(from: "0.4.0")),
+        .package(name: "HitchKit", url: "https://github.com/KittyMac/Hitch.git", .upToNextMinor(from: "0.5.0")),
     ],
     targets: [
         .target(
-            name: "Spanker",
+            name: "SpankerKit",
             dependencies: [
-                "Hitch"
+                "HitchKit"
             ]),
         .testTarget(
             name: "SpankerTests",
-            dependencies: ["Spanker"]),
+            dependencies: ["SpankerKit"]),
     ]
 )

@@ -1,5 +1,5 @@
 import Foundation
-import Hitch
+import HitchKit
 
 public extension JsonElement {
 

@@ -15,7 +15,7 @@ update:
 
 xcode:
 	swift package generate-xcodeproj
-	meta/addBuildPhase Spanker.xcodeproj/project.pbxproj 'Spanker::Spanker' 'cd $${SRCROOT}; ./meta/CombinedBuildPhases.sh'
+	meta/addBuildPhase SpankerKit.xcodeproj/project.pbxproj 'SpankerKit::SpankerKit' 'cd $${SRCROOT}; ./meta/CombinedBuildPhases.sh'
 
 docker:
 	-DOCKER_HOST=tcp://192.168.1.209:2376 docker buildx create --name cluster --platform linux/arm64/v8 --append

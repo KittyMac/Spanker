@@ -1,5 +1,5 @@
 import Foundation
-import Hitch
+import HitchKit
 
 public extension Data {
     @inlinable @inline(__always)
@@ -288,7 +288,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         @usableFromInline
         internal let valueArray: [JsonElement]
 
-        @inlinable @inline(__always)
+        @usableFromInline
         internal init(keyArray: [HalfHitch], valueArray: [JsonElement]) {
             self.keyArray = keyArray
             self.valueArray = valueArray
@@ -318,7 +318,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         @usableFromInline
         internal let keyArray: [HalfHitch]
 
-        @inlinable @inline(__always)
+        @usableFromInline
         internal init(keyArray: [HalfHitch]) {
             self.keyArray = keyArray
             countMinusOne = keyArray.count - 1
@@ -342,7 +342,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         @usableFromInline
         internal let valueArray: [JsonElement]
 
-        @inlinable @inline(__always)
+        @usableFromInline
         internal init(valueArray: [JsonElement]) {
             self.valueArray = valueArray
             countMinusOne = valueArray.count - 1
@@ -506,8 +506,9 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                 return JsonElement(unknown: nil)
             case .string:
                 return JsonElement(unknown: valueString)
+            default:
+                return JsonElement(unknown: nil)
             }
-
         }
     }
 
@@ -656,7 +657,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
     public init(unknown: JsonElementable?) {
         internalType = .null
         unknown?.fillJsonElement(internalType: &internalType,
@@ -722,43 +722,43 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init() {
         internalType = .null
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init(string: HalfHitch) {
         internalType = .string
         valueString = string
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init(bool: Bool) {
         internalType = .boolean
         valueInt = bool == true ? 1 : 0
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init(int: Int) {
         internalType = .int
         valueInt = int
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init(double: Double) {
         internalType = .double
         valueDouble = double
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init(array: [JsonElement]) {
         internalType = .array
         valueArray = array
         valueArray.reserveCapacity(32)
     }
 
-    @inlinable @inline(__always)
+    @usableFromInline
     init(keys: [HalfHitch],
          values: [JsonElement]) {
         internalType = .dictionary
@@ -902,6 +902,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                 }
             }
             hitch.append(UInt8.closeBracket)
+        default: break
         }
         return hitch
     }

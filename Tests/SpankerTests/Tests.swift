@@ -1,8 +1,8 @@
 import XCTest
-import class Foundation.Bundle
+import Foundation
 
-import Spanker
-import Hitch
+import SpankerKit
+import HitchKit
 
 class SpankerTests: TestsBase {
     
