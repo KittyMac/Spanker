@@ -2,12 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "HitchKit",
+        "package": "Hitch",
         "repositoryURL": "https://github.com/KittyMac/Hitch.git",
         "state": {
           "branch": null,
-          "revision": "e90fc062825210ba5a73eb44c6ae541f9d0dc81b",
-          "version": "0.5.0"
+          "revision": "4bf2cca39f0b2c1bbed72577b0ce81d67e036033",
+          "version": "0.4.26"
         }
       }
     ]

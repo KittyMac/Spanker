@@ -1,7 +1,7 @@
 import XCTest
 import class Foundation.Bundle
 
-import SpankerKit
+import Spanker
 
 public class TestsBase: XCTestCase {
     

@@ -1,5 +1,5 @@
 import Foundation
-import HitchKit
+import Hitch
 
 @inlinable @inline(__always)
 internal func strskip(json: HalfHitch, offset: Int, _ params: UInt8...) -> Int {

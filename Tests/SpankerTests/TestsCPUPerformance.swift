@@ -1,7 +1,7 @@
 import XCTest
 import class Foundation.Bundle
 
-import SpankerKit
+import Spanker
 
 class SpankerTestsCPUPerformance: TestsBase {
     
