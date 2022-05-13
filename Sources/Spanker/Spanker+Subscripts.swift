@@ -60,9 +60,23 @@ public extension JsonElement {
             return self[HalfHitch(hashOnly: key)]
         }
     }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> JsonElement? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
 
     @inlinable @inline(__always)
     subscript (element key: String) -> JsonElement? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
+    
+    @inlinable @inline(__always)
+    subscript (element key: StaticString) -> JsonElement? {
         get {
             return self[HalfHitch(hashOnly: key)]
         }
@@ -117,6 +131,13 @@ public extension JsonElement {
 
     @inlinable @inline(__always)
     subscript (key: String) -> HalfHitch? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> HalfHitch? {
         get {
             return self[HalfHitch(hashOnly: key)]
         }
@@ -182,6 +203,13 @@ public extension JsonElement {
             return self[HalfHitch(hashOnly: key)]
         }
     }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> Hitch? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
 
     @inlinable @inline(__always)
     subscript (hitch key: String) -> Hitch? {
@@ -243,6 +271,13 @@ public extension JsonElement {
             return self[HalfHitch(hashOnly: key)]
         }
     }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> String? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
 
     @inlinable @inline(__always)
     subscript (string key: String) -> String? {
@@ -300,6 +335,13 @@ public extension JsonElement {
 
     @inlinable @inline(__always)
     subscript (key: String) -> Int? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> Int? {
         get {
             return self[HalfHitch(hashOnly: key)]
         }
@@ -368,6 +410,13 @@ public extension JsonElement {
             return self[HalfHitch(hashOnly: key)]
         }
     }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> Double? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
 
     @inlinable @inline(__always)
     subscript (double key: String) -> Double? {
@@ -432,6 +481,13 @@ public extension JsonElement {
             return self[HalfHitch(hashOnly: key)]
         }
     }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> Float? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
 
     @inlinable @inline(__always)
     subscript (float key: String) -> Float? {
@@ -489,6 +545,13 @@ public extension JsonElement {
 
     @inlinable @inline(__always)
     subscript (key: String) -> Bool? {
+        get {
+            return self[HalfHitch(hashOnly: key)]
+        }
+    }
+    
+    @inlinable @inline(__always)
+    subscript (key: StaticString) -> Bool? {
         get {
             return self[HalfHitch(hashOnly: key)]
         }
