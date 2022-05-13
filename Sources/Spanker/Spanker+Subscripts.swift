@@ -57,14 +57,14 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> JsonElement? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
     @inlinable @inline(__always)
     subscript (element key: String) -> JsonElement? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -118,7 +118,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> HalfHitch? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -179,7 +179,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> Hitch? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -240,7 +240,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> String? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -301,7 +301,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> Int? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -365,7 +365,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> Double? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -429,7 +429,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> Float? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
@@ -490,7 +490,7 @@ public extension JsonElement {
     @inlinable @inline(__always)
     subscript (key: String) -> Bool? {
         get {
-            return self[HalfHitch(string: key)]
+            return self[HalfHitch(hashOnly: key)]
         }
     }
 
