@@ -11,7 +11,7 @@ RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && ap
 RUN rm -rf /var/lib/apt/lists/*
 
 
-WORKDIR /root/Spanker
+WORKDIR /root/Chronometer
 COPY ./Makefile ./Makefile
 COPY ./Package.resolved ./Package.resolved
 COPY ./Package.swift ./Package.swift
