@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/KittyMac/Hitch.git",
       "state" : {
-        "branch" : "enable-library-evolution",
-        "revision" : "2ccd673446da96f89d7cac658a04fe6d4a3ad11e"
+        "revision" : "6c4eeb3a675c5649a27e51a8dfd67ab0439357d1",
+        "version" : "0.4.48"
       }
     }
   ],
