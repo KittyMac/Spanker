@@ -1,7 +1,7 @@
 SWIFT_BUILD_FLAGS=--configuration release
 
 build:
-	swift build -v $(SWIFT_BUILD_FLAGS)
+	swift build -Xswiftc -enable-library-evolution -v $(SWIFT_BUILD_FLAGS)
 
 clean:
 	rm -rf .build

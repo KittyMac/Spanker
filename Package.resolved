@@ -1,16 +1,14 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "Hitch",
-        "repositoryURL": "https://github.com/KittyMac/Hitch.git",
-        "state": {
-          "branch": null,
-          "revision": "7cea1901cf1cd4bf390c1cf17eca73952f13f310",
-          "version": "0.4.34"
-        }
+  "pins" : [
+    {
+      "identity" : "hitch",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Hitch.git",
+      "state" : {
+        "branch" : "enable-library-evolution",
+        "revision" : "2ccd673446da96f89d7cac658a04fe6d4a3ad11e"
       }
-    ]
-  },
-  "version": 1
+    }
+  ],
+  "version" : 2
 }
