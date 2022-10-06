@@ -644,6 +644,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     public func clean() {
+        guard internalType == .dictionary || internalType == .array else { return }
         for idx in stride(from: count-1, through: 0, by: -1) {
             if valueArray[idx].type == .null {
                 if idx < keyArray.count {
