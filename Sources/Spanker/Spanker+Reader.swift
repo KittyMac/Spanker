@@ -128,7 +128,7 @@ extension Spanker {
                 guard jsonAttribute.valueIdx < endIdx else { return JsonElement(string: HalfHitch()) }
                 var valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
                 if jsonAttribute.shouldUnescape {
-                    valueString = valueString.unescaped()
+                    valueString = valueString.unicodeUnescaped()
                 }
                 return JsonElement(string: valueString)
             }
@@ -149,7 +149,7 @@ extension Spanker {
                 guard jsonAttribute.nameIdx > 0 else { return nil }
                 var name = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
                 if jsonAttribute.shouldUnescape {
-                    name = name.unescaped()
+                    name = name.unicodeUnescaped()
                 }
                 return name
             }
@@ -241,7 +241,7 @@ extension Spanker {
                             // grab the name of the attribute
                             var key = HalfHitch(source: json, from: jsonAttribute.nameIdx, to: jsonAttribute.endNameIdx)
                             if jsonAttribute.shouldUnescape {
-                                key = key.unescaped()
+                                key = key.unicodeUnescaped()
                             }
 
                             // advance forward until we find the start of the next thing
