@@ -8,7 +8,8 @@ let package = Package(
         .macOS(.v10_13), .iOS(.v11)
     ],
     products: [
-        .library(name: "Spanker", type: .dynamic, targets: ["Spanker"])
+        .library(name: "Spanker", targets: ["Spanker"]),
+        .library(name: "SpankerLib", type: .dynamic, targets: ["Spanker"]),
     ],
     dependencies: [
         .package(url: "https://github.com/KittyMac/Hitch.git", from: "0.4.0"),
