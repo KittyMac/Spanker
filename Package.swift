@@ -9,7 +9,6 @@ let package = Package(
     ],
     products: [
         .library(name: "Spanker", targets: ["Spanker"]),
-        .library(name: "SpankerLib", type: .dynamic, targets: ["Spanker"]),
     ],
     dependencies: [
         .package(url: "https://github.com/KittyMac/Hitch.git", from: "0.4.0"),
