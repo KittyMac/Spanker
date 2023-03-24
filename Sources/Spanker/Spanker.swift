@@ -302,6 +302,9 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                 index += 1
                 let value = valueArray[index]
                 if value.type == .dictionary || value.type == .array {
+                    guard index < keyArray.count else {
+                        return (HalfHitch(string: "\(index)"), value)
+                    }
                     return (keyArray[index], value)
                 }
             }
