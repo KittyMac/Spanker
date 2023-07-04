@@ -777,24 +777,25 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         valueArray.reserveCapacity(32)
     }
 
-    public func sortKeys() {
-        guard type == .dictionary || type == .array else { return }
-
+    @discardableResult
+    public func sortKeys() -> Self {
+        guard type == .dictionary || type == .array else { return self }
         for value in iterValues {
             if value.type == .dictionary || value.type == .array {
                 value.sortKeys()
             }
         }
-
         if type == .dictionary {
             let combined = zip(keyArray, valueArray).sorted { $0.0 < $1.0 }
             keyArray = combined.map { $0.0 }
             valueArray = combined.map { $0.1 }
         }
+        return self
     }
 
-    public func sortAll() {
-        guard type == .dictionary || type == .array else { return }
+    @discardableResult
+    public func sortAll() -> Self {
+        guard type == .dictionary || type == .array else { return self }
 
         for value in iterValues {
             value.sortAll()
@@ -821,11 +822,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
             valueArray = newValueArray
         }
+        return self
     }
 
-    public func sortArray(_ comparator: (JsonElement, JsonElement) -> Bool) {
-        guard type == .array else { return }
+    @discardableResult
+    public func sortArray(_ comparator: (JsonElement, JsonElement) -> Bool) -> Self {
+        guard type == .array else { return self }
         valueArray.sort(by: comparator)
+        return self
     }
 
     private var cachedReify: Any?
