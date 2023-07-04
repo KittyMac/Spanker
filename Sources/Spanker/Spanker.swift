@@ -416,11 +416,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public var stringValue: String? {
         get {
-            guard internalType == .string else { return nil }
+            guard internalType == .string || internalType == .regex else { return nil }
             return valueString.toString()
         }
         set {
-            guard internalType == .string else { return }
+            guard internalType == .string || internalType == .regex else { return }
             guard let value = newValue else {
                 valueString = HalfHitch.empty
                 return
@@ -432,11 +432,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public var hitchValue: Hitch? {
         get {
-            guard internalType == .string else { return nil }
+            guard internalType == .string || internalType == .regex else { return nil }
             return valueString.hitch()
         }
         set {
-            guard internalType == .string else { return }
+            guard internalType == .string || internalType == .regex else { return }
             guard let value = newValue else {
                 valueString = HalfHitch.empty
                 return
@@ -448,11 +448,11 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @inlinable @inline(__always)
     public var halfHitchValue: HalfHitch? {
         get {
-            guard internalType == .string else { return nil }
+            guard internalType == .string || internalType == .regex else { return nil }
             return valueString
         }
         set {
-            guard internalType == .string else { return }
+            guard internalType == .string || internalType == .regex else { return }
             guard let value = newValue else {
                 valueString = HalfHitch.empty
                 return
@@ -526,7 +526,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable @inline(__always)
     public var count: Int {
-        if internalType == .string {
+        if internalType == .string || internalType == .regex {
             return valueString.count
         }
         return valueArray.count
