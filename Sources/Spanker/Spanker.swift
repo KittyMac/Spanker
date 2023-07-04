@@ -1,6 +1,11 @@
 import Foundation
 import Hitch
 
+prefix operator ^
+public prefix func ^ (value: JsonElementable?) -> JsonElement {
+    return JsonElement(unknown: value)
+}
+
 public extension Data {
     @inlinable @inline(__always)
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
