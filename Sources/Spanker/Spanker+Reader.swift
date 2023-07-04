@@ -43,12 +43,38 @@ internal func strstrNoEscaped(json: HalfHitch,
     return idx
 }
 
+@inlinable @inline(__always)
+internal func strstrRegex(json: HalfHitch,
+                          offset: Int,
+                          find: UInt8) -> Int {
+    // look forward for the matching character, not counting escaped versions of it
+    var skipNext = false
+    var idx = offset
+
+    var prev: UInt8 = 0
+    for char in json.stride(from: offset, to: json.count) {
+        guard char != 0 else { break }
+        guard skipNext == false else {
+            skipNext = false
+            idx += 1
+            prev = char
+            continue
+        }
+        if char == find && prev != .backSlash {
+            return idx
+        }
+        idx += 1
+    }
+    return idx
+}
+
 extension Spanker {
 
     internal enum ValueType {
         case unknown
         case null
         case string
+        case regex
         case booleanTrue
         case booleanFalse
         case int
@@ -131,6 +157,12 @@ extension Spanker {
                     valueString = valueString.unicodeUnescaped()
                 }
                 return JsonElement(string: valueString)
+            }
+            
+            let attributeAsRegex: (Int) -> JsonElement = { endIdx in
+                guard jsonAttribute.valueIdx < endIdx else { return JsonElement(string: HalfHitch()) }
+                let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx-1, to: endIdx)
+                return JsonElement(regex: valueString)
             }
 
             let attributeAsInt: (Int) -> JsonElement = { endIdx in
@@ -246,7 +278,33 @@ extension Spanker {
 
                             // advance forward until we find the start of the next thing
                             var nextChar = raw[nextCurrentIdx]
-                            if nextChar == .doubleQuote {
+                            
+                            if nextChar == .forwardSlash {
+                                // our value is a regex
+                                jsonAttribute.type = .regex
+                                jsonAttribute.valueIdx = nextCurrentIdx + 1
+
+                                nextCurrentIdx = strstrRegex(json: json,
+                                                             offset: jsonAttribute.valueIdx,
+                                                             find: .forwardSlash)
+                                
+                                // consume the trailing forward slash
+                                if json[nextCurrentIdx] == .forwardSlash {
+                                    nextCurrentIdx += 1
+                                }
+                                
+                                // handle regex flags
+                                let flags: HalfHitch = "igm"
+                                while flags.contains(json[nextCurrentIdx]) {
+                                    nextCurrentIdx += 1
+                                }
+
+                                appendElement(key, attributeAsRegex(nextCurrentIdx))
+
+                                jsonAttribute.clear()
+
+                                nextCurrentIdx += 1
+                            } else if nextChar == .doubleQuote {
                                 // our value is a string
                                 jsonAttribute.type = .string
                                 jsonAttribute.valueIdx = nextCurrentIdx + 1
@@ -336,7 +394,32 @@ extension Spanker {
 
                         // advance forward until we find the start of the next thing
                         var nextChar = raw[nextCurrentIdx]
-                        if nextChar == .doubleQuote {
+                        if nextChar == .forwardSlash {
+                            // our value is a regex
+                            jsonAttribute.type = .regex
+                            jsonAttribute.valueIdx = nextCurrentIdx + 1
+
+                            nextCurrentIdx = strstrRegex(json: json,
+                                                         offset: jsonAttribute.valueIdx,
+                                                         find: .forwardSlash)
+                            
+                            // consume the trailing forward slash
+                            if json[nextCurrentIdx] == .forwardSlash {
+                                nextCurrentIdx += 1
+                            }
+                            
+                            // handle regex flags
+                            let flags: HalfHitch = "igm"
+                            while flags.contains(json[nextCurrentIdx]) {
+                                nextCurrentIdx += 1
+                            }
+
+                            appendElement(nil, attributeAsRegex(nextCurrentIdx))
+
+                            jsonAttribute.clear()
+
+                            nextCurrentIdx += 1
+                        } else if nextChar == .doubleQuote {
                             // our value is a string
                             jsonAttribute.type = .string
                             jsonAttribute.valueIdx = nextCurrentIdx + 1

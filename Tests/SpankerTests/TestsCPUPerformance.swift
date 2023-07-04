@@ -5,6 +5,7 @@ import Spanker
 
 class SpankerTestsCPUPerformance: TestsBase {
     
+    /*
     var largeData: Data = Data()
     
     override func setUp() {
@@ -31,5 +32,5 @@ class SpankerTestsCPUPerformance: TestsBase {
             }
         }
     }
-    
+    */
 }

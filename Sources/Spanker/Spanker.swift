@@ -42,6 +42,7 @@ public enum JsonType: UInt8 {
     case double
     case array
     case dictionary
+    case regex
 }
 
 // MARK: - JsonElementable
@@ -377,6 +378,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             return lhs.valueInt == rhs.valueInt
         case .string:
             return lhs.valueString == rhs.valueString
+        case .regex:
+            return lhs.valueString == rhs.valueString
         case .int:
             return lhs.valueInt == rhs.valueInt
         case .double:
@@ -513,6 +516,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             case .null:
                 return JsonElement(unknown: nil)
             case .string:
+                return JsonElement(unknown: valueString)
+            case .regex:
                 return JsonElement(unknown: valueString)
             }
 
@@ -740,6 +745,12 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         internalType = .string
         valueString = string
     }
+    
+    @usableFromInline
+    init(regex: HalfHitch) {
+        internalType = .regex
+        valueString = regex
+    }
 
     @usableFromInline
     init(bool: Bool) {
@@ -846,6 +857,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             cachedReify = valueInt != 0
         case .string:
             cachedReify = valueString.toString()
+        case .regex:
+            cachedReify = valueString.toString()
         case .int:
             cachedReify = valueInt
         case .double:
@@ -888,6 +901,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             hitch.append(UInt8.doubleQuote)
             hitch.append(valueString.escaped(unicode: false, singleQuotes: false))
             hitch.append(UInt8.doubleQuote)
+        case .regex:
+            hitch.append(valueString)
         case .int:
             hitch.append(number: valueInt)
         case .double:

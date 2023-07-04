@@ -205,6 +205,22 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_regex() {
+        let jsons = [
+            #"/\d+/ig"#,
+            #"/\d+/i"#,
+            #"/\d+/"#,
+            #"/\d+/"#,
+            #"[/\d+/]"#,
+            #"{"regex":/\d+/}"#,
+        ]
+        for json in jsons {
+            json.parsed { result in
+                XCTAssertEqual(json, result?.description)
+            }
+        }
+    }
+    
     func test_int() {
         let jsons = [
             #"0"#,
@@ -309,6 +325,7 @@ class SpankerTests: TestsBase {
         }
     }
     
+    /*
     func test_github1() {
         let jsonString = try! String(contentsOfFile: "/Volumes/Storage/large.minified.json")
         jsonString.parsed { result in
@@ -316,7 +333,7 @@ class SpankerTests: TestsBase {
             
             XCTAssertEqual(jsonString.count, result.description.count)
         }
-    }
+    }*/
     
     func test_compliance0() {
         jsonDocument.parsed { result in
