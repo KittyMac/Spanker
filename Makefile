@@ -12,6 +12,16 @@ test:
 update:
 	swift package update
 
+profile: clean
+	mkdir -p /tmp/spanker.stats
+	swift build \
+		--configuration release \
+		-Xswiftc -stats-output-dir \
+		-Xswiftc /tmp/spanker.stats \
+		-Xswiftc -trace-stats-events \
+		-Xswiftc -driver-time-compilation \
+		-Xswiftc -debug-time-function-bodies
+
 docker:
 	-docker buildx create --name cluster_builder203
 	-DOCKER_HOST=ssh://rjbowli@192.168.1.203 docker buildx create --name cluster_builder203 --platform linux/amd64 --append
