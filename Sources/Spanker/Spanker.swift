@@ -880,6 +880,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
         return cachedReify
     }
+    
+    @discardableResult
+    @inlinable
+    public func exportTo(hitch: Hitch) -> Hitch {
+        return exportTo(hitch: hitch,
+                        pretty: false,
+                        level: 0)
+    }
 
     @discardableResult
     @inlinable
