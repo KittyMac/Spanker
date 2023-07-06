@@ -682,17 +682,23 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable
     public var description: String {
-        return exportTo(hitch: Hitch(capacity: 1024)).description
+        return exportTo(hitch: Hitch(capacity: 1024),
+                        pretty: false,
+                        level: 0).description
     }
 
     @inlinable
-    public func toString() -> String {
-        return exportTo(hitch: Hitch(capacity: 1024)).toString()
+    public func toString(pretty: Bool = false) -> String {
+        return exportTo(hitch: Hitch(capacity: 1024),
+                        pretty: pretty,
+                        level: 0).toString()
     }
 
     @inlinable
-    public func toHitch() -> Hitch {
-        return exportTo(hitch: Hitch(capacity: 1024))
+    public func toHitch(pretty: Bool = false) -> Hitch {
+        return exportTo(hitch: Hitch(capacity: 1024),
+                        pretty: pretty,
+                        level: 0)
     }
 
     // MARK: - Internal
@@ -877,30 +883,43 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @discardableResult
     @inlinable
-    public func exportTo(hitch: Hitch) -> Hitch {
+    public func exportTo(hitch: Hitch,
+                         pretty: Bool,
+                         level: Int) -> Hitch {
+        func nextLine(offset: Int) {
+            guard pretty else { return }
+            hitch.append(.newLine)
+            for _ in 0..<(level+offset) {
+                hitch.append(.space)
+                hitch.append(.space)
+                hitch.append(.space)
+                hitch.append(.space)
+            }
+        }
+        
         switch internalType {
         case .null:
-            hitch.append(UInt8.n)
-            hitch.append(UInt8.u)
-            hitch.append(UInt8.l)
-            hitch.append(UInt8.l)
+            hitch.append(.n)
+            hitch.append(.u)
+            hitch.append(.l)
+            hitch.append(.l)
         case .boolean:
             if valueInt != 0 {
-                hitch.append(UInt8.t)
-                hitch.append(UInt8.r)
-                hitch.append(UInt8.u)
-                hitch.append(UInt8.e)
+                hitch.append(.t)
+                hitch.append(.r)
+                hitch.append(.u)
+                hitch.append(.e)
             } else {
-                hitch.append(UInt8.f)
-                hitch.append(UInt8.a)
-                hitch.append(UInt8.l)
-                hitch.append(UInt8.s)
-                hitch.append(UInt8.e)
+                hitch.append(.f)
+                hitch.append(.a)
+                hitch.append(.l)
+                hitch.append(.s)
+                hitch.append(.e)
             }
         case .string:
-            hitch.append(UInt8.doubleQuote)
+            hitch.append(.doubleQuote)
             hitch.append(valueString.escaped(unicode: false, singleQuotes: false))
-            hitch.append(UInt8.doubleQuote)
+            hitch.append(.doubleQuote)
         case .regex:
             hitch.append(valueString)
         case .int:
@@ -908,27 +927,40 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         case .double:
             hitch.append(double: valueDouble)
         case .array:
-            hitch.append(UInt8.openBrace)
+            hitch.append(.openBrace)
             for idx in 0..<valueArray.count {
-                valueArray[idx].exportTo(hitch: hitch)
+                nextLine(offset: 1)
+                valueArray[idx].exportTo(hitch: hitch,
+                                         pretty: pretty,
+                                         level: level + 1)
                 if idx < valueArray.count - 1 {
-                    hitch.append(UInt8.comma)
+                    hitch.append(.comma)
+                } else {
+                    nextLine(offset: 0)
                 }
             }
-            hitch.append(UInt8.closeBrace)
+            hitch.append(.closeBrace)
         case .dictionary:
-            hitch.append(UInt8.openBracket)
+            hitch.append(.openBracket)
             for idx in 0..<keyArray.count {
-                hitch.append(UInt8.doubleQuote)
+                nextLine(offset: 1)
+                hitch.append(.doubleQuote)
                 hitch.append(keyArray[idx])
-                hitch.append(UInt8.doubleQuote)
-                hitch.append(UInt8.colon)
-                valueArray[idx].exportTo(hitch: hitch)
+                hitch.append(.doubleQuote)
+                hitch.append(.colon)
+                if pretty {
+                    hitch.append(.space)
+                }
+                valueArray[idx].exportTo(hitch: hitch,
+                                         pretty: pretty,
+                                         level: level + 1)
                 if idx < keyArray.count - 1 {
-                    hitch.append(UInt8.comma)
+                    hitch.append(.comma)
+                } else {
+                    nextLine(offset: 0)
                 }
             }
-            hitch.append(UInt8.closeBracket)
+            hitch.append(.closeBracket)
         }
         return hitch
     }

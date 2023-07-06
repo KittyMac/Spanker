@@ -70,16 +70,36 @@ class SpankerTests: TestsBase {
     }
     
     func test_array_strings0() {
-            let json = #"["A","B","C"]"#
+        let json = #"["A","B","C"]"#
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
         }
+        
+        let pretty = """
+        [
+            "A",
+            "B",
+            "C"
+        ]
+        """
+        pretty.parsed { result in
+            XCTAssertEqual(pretty, result!.toString(pretty: true))
         }
+    }
     
     func test_object_simple0() {
         let json = #"{"foo":"bar"}"#
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
+        }
+        
+        let pretty = """
+        {
+            "foo": "bar"
+        }
+        """
+        pretty.parsed { result in
+            XCTAssertEqual(pretty, result!.toString(pretty: true))
         }
     }
     
@@ -87,6 +107,17 @@ class SpankerTests: TestsBase {
         let json = #"{"foo":{"bar":"baz"}}"#
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
+        }
+        
+        let pretty = """
+        {
+            "foo": {
+                "bar": "baz"
+            }
+        }
+        """
+        pretty.parsed { result in
+            XCTAssertEqual(pretty, result!.toString(pretty: true))
         }
     }
     
@@ -102,6 +133,44 @@ class SpankerTests: TestsBase {
         let json = #"[{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}},{"foo":{"bar":"baz"}}]"#
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
+        }
+        
+        let pretty = """
+        [
+            {
+                "foo": {
+                    "bar": "baz"
+                }
+            },
+            {
+                "foo": {
+                    "bar": "baz"
+                }
+            },
+            {
+                "foo": {
+                    "bar": "baz"
+                }
+            },
+            {
+                "foo": {
+                    "bar": "baz"
+                }
+            },
+            {
+                "foo": {
+                    "bar": "baz"
+                }
+            },
+            {
+                "foo": {
+                    "bar": "baz"
+                }
+            }
+        ]
+        """
+        pretty.parsed { result in
+            XCTAssertEqual(pretty, result!.toString(pretty: true))
         }
     }
     
@@ -151,6 +220,69 @@ class SpankerTests: TestsBase {
             let json = #"{"store":{"book":[{"category":"reference","author":"Nigel Rees","title":"Sayings of the Century","price":8.95,"address":{"street":"fleet street","city":"London"}},{"category":"fiction","author":"Evelyn Waugh","title":"Sword of Honour","price":12.9,"address":{"street":"Baker street","city":"London"}},{"category":"fiction","author":"J. R. R. Tolkien","title":"The Lord of the Rings","isbn":"0-395-19395-8","price":22.99,"address":{"street":"Svea gatan","city":"Stockholm"}}],"bicycle":{"color":"red","price":19.95,"address":{"street":"Söder gatan","city":"Stockholm"},"items":[["A","B","C"],1,2,3,4,5]}}}"#
         json.parsed { result in
             XCTAssertEqual(json, result?.description)
+        }
+        
+        let pretty = """
+        {
+            "store": {
+                "book": [
+                    {
+                        "category": "reference",
+                        "author": "Nigel Rees",
+                        "title": "Sayings of the Century",
+                        "price": 8.95,
+                        "address": {
+                            "street": "fleet street",
+                            "city": "London"
+                        }
+                    },
+                    {
+                        "category": "fiction",
+                        "author": "Evelyn Waugh",
+                        "title": "Sword of Honour",
+                        "price": 12.9,
+                        "address": {
+                            "street": "Baker street",
+                            "city": "London"
+                        }
+                    },
+                    {
+                        "category": "fiction",
+                        "author": "J. R. R. Tolkien",
+                        "title": "The Lord of the Rings",
+                        "isbn": "0-395-19395-8",
+                        "price": 22.99,
+                        "address": {
+                            "street": "Svea gatan",
+                            "city": "Stockholm"
+                        }
+                    }
+                ],
+                "bicycle": {
+                    "color": "red",
+                    "price": 19.95,
+                    "address": {
+                        "street": "Söder gatan",
+                        "city": "Stockholm"
+                    },
+                    "items": [
+                        [
+                            "A",
+                            "B",
+                            "C"
+                        ],
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ]
+                }
+            }
+        }
+        """
+        pretty.parsed { result in
+            XCTAssertEqual(pretty, result!.toString(pretty: true))
         }
     }
     
