@@ -325,15 +325,15 @@ class SpankerTests: TestsBase {
         }
     }
     
-    /*
+    
     func test_github1() {
-        let jsonString = try! String(contentsOfFile: "/Volumes/Storage/large.minified.json")
+        let jsonString = try! String(contentsOfFile: "/Users/rjbowli/Development/data/large.minified.json")
         jsonString.parsed { result in
             guard let result = result else { XCTFail(); return }
             
             XCTAssertEqual(jsonString.count, result.description.count)
         }
-    }*/
+    }
     
     func test_compliance0() {
         jsonDocument.parsed { result in

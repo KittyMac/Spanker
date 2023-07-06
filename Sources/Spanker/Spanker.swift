@@ -7,28 +7,28 @@ public prefix func ^ (value: JsonElementable?) -> JsonElement {
 }
 
 public extension Data {
-    @inlinable @inline(__always)
+    @inlinable
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
         return Spanker.parsed(data: self, callback)
     }
 }
 
 public extension Hitch {
-    @inlinable @inline(__always)
+    @inlinable
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
         return Spanker.parsed(hitch: self, callback)
     }
 }
 
 public extension HalfHitch {
-    @inlinable @inline(__always)
+    @inlinable
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
         return Spanker.parsed(halfhitch: self, callback)
     }
 }
 
 public extension String {
-    @inlinable @inline(__always)
+    @inlinable
     func parsed<T>(_ callback: (JsonElement?) -> T?) -> T? {
         return Spanker.parsed(string: self, callback)
     }
@@ -58,12 +58,12 @@ public protocol JsonElementable {
 }
 
 extension JsonElement: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return self
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -80,12 +80,12 @@ extension JsonElement: JsonElementable {
 }
 
 extension String: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(string: HalfHitch(string: self))
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -98,12 +98,12 @@ extension String: JsonElementable {
 }
 
 extension StaticString: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(string: HalfHitch(stringLiteral: self))
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -116,12 +116,12 @@ extension StaticString: JsonElementable {
 }
 
 extension Hitch: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(string: self.halfhitch())
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -134,12 +134,12 @@ extension Hitch: JsonElementable {
 }
 
 extension HalfHitch: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(string: self)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -152,12 +152,12 @@ extension HalfHitch: JsonElementable {
 }
 
 extension Int: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(int: self)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -170,12 +170,12 @@ extension Int: JsonElementable {
 }
 
 extension Double: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(double: self)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -188,12 +188,12 @@ extension Double: JsonElementable {
 }
 
 extension Bool: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(bool: self)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -206,12 +206,12 @@ extension Bool: JsonElementable {
 }
 
 extension NSNull: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement.null()
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -223,12 +223,12 @@ extension NSNull: JsonElementable {
 }
 
 extension NSNumber: JsonElementable {
-    @inlinable @inline(__always)
+    @inlinable
     public func toJsonElement() -> JsonElement {
         return JsonElement(double: doubleValue)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func fillJsonElement(internalType: inout JsonType,
                                 valueInt: inout Int,
                                 valueDouble: inout Double,
@@ -301,7 +301,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             countMinusOne = valueArray.count - 1
         }
 
-        @inlinable @inline(__always)
+        @inlinable
         public mutating func next() -> (HalfHitch, JsonElement)? {
             while true {
                 guard index < countMinusOne else { return nil }
@@ -333,7 +333,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             countMinusOne = keyArray.count - 1
         }
 
-        @inlinable @inline(__always)
+        @inlinable
         public mutating func next() -> HalfHitch? {
             guard index < countMinusOne else { return nil }
             index += 1
@@ -357,7 +357,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             countMinusOne = valueArray.count - 1
         }
 
-        @inlinable @inline(__always)
+        @inlinable
         public mutating func next() -> JsonElement? {
             guard index < countMinusOne else { return nil }
             index += 1
@@ -393,27 +393,27 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     // MARK: - Public
 
-    @inlinable @inline(__always)
+    @inlinable
     public var type: JsonType {
         return internalType
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var iterWalking: WalkingIterator {
         return WalkingIterator(keyArray: keyArray, valueArray: valueArray)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var iterKeys: KeysIterator {
         return KeysIterator(keyArray: keyArray)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var iterValues: ValuesIterator {
         return ValuesIterator(valueArray: valueArray)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var stringValue: String? {
         get {
             guard internalType == .string || internalType == .regex else { return nil }
@@ -429,7 +429,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var hitchValue: Hitch? {
         get {
             guard internalType == .string || internalType == .regex else { return nil }
@@ -445,7 +445,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var halfHitchValue: HalfHitch? {
         get {
             guard internalType == .string || internalType == .regex else { return nil }
@@ -461,7 +461,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var intValue: Int? {
         get {
             guard internalType == .int else { return nil }
@@ -473,7 +473,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var doubleValue: Double? {
         get {
             guard internalType == .double else { return nil }
@@ -485,7 +485,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var boolValue: Bool? {
         get {
             guard internalType == .boolean else { return nil }
@@ -501,7 +501,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var values: JsonElement {
         get {
             switch internalType {
@@ -524,7 +524,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         }
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var count: Int {
         if internalType == .string || internalType == .regex {
             return valueString.count
@@ -532,7 +532,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         return valueArray.count
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func containsAll(keys: [HalfHitch]) -> Bool {
         guard internalType == .dictionary else { return false }
 
@@ -550,7 +550,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         return true
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func containsAll(keys: [Hitch]) -> Bool {
         guard internalType == .dictionary else { return false }
 
@@ -568,13 +568,13 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         return true
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func contains(key: HalfHitch) -> Bool {
         guard internalType == .dictionary else { return false }
         return keyArray.contains(key)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func contains(key: Hitch) -> Bool {
         guard internalType == .dictionary else { return false }
         for existingKey in keyArray where existingKey == key {
@@ -583,7 +583,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         return false
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func replace(with other: JsonElement) {
         self.internalType = other.internalType
         self.valueString = other.valueString
@@ -593,20 +593,20 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         self.keyArray = other.keyArray
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func replace(at: Int, value: JsonElementable?) {
         guard internalType == .array else { return }
         guard at >= 0 && at < valueArray.count else { return }
         valueArray[at] = JsonElement(unknown: value)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func append(value: JsonElementable?) {
         guard internalType == .array else { return }
         valueArray.append(JsonElement(unknown: value))
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func insert(value: JsonElementable?, at index: Int) {
         guard internalType == .array else { return }
         while valueArray.count <= index {
@@ -615,7 +615,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         valueArray.insert(JsonElement(unknown: value), at: index)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func set(value: JsonElementable?, at index: Int) {
         guard internalType == .array else { return }
         while valueArray.count <= index {
@@ -624,14 +624,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         valueArray[index] = JsonElement(unknown: value)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func rename(key: HalfHitch, with: HalfHitch) {
         guard internalType == .dictionary else { return }
         guard let index = keyArray.firstIndex(of: key) else { return }
         keyArray[index] = with
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func set(key: HalfHitch,
                     value: JsonElementable?) {
         guard internalType == .dictionary else { return }
@@ -639,14 +639,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             element: value?.toJsonElement() ?? JsonElement.null())
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func remove(at: Int) {
         guard internalType == .array else { return }
         guard at >= 0 && at < valueArray.count else { return }
         valueArray.remove(at: at)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func remove(key: HalfHitch) {
         guard internalType == .dictionary else { return }
         guard let index = keyArray.firstIndex(of: key) else { return }
@@ -655,7 +655,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         valueArray.remove(at: index)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func clean() {
         guard internalType == .dictionary || internalType == .array else { return }
         for idx in stride(from: count-1, through: 0, by: -1) {
@@ -680,17 +680,17 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                                  keyArray: &keyArray)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public var description: String {
         return exportTo(hitch: Hitch(capacity: 1024)).description
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func toString() -> String {
         return exportTo(hitch: Hitch(capacity: 1024)).toString()
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public func toHitch() -> Hitch {
         return exportTo(hitch: Hitch(capacity: 1024))
     }
@@ -711,18 +711,18 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     @usableFromInline
     internal var keyArray: [HalfHitch] = []
 
-    @inlinable @inline(__always)
+    @inlinable
     internal var valueBool: Bool {
         return valueInt == 0 ? false : true
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     internal func append(value: JsonElement) {
         guard internalType == .array else { return }
         valueArray.append(value)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     internal func set(key: HalfHitch,
                       element: JsonElement) {
         guard internalType == .dictionary else { return }
@@ -876,7 +876,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
     @discardableResult
-    @inlinable @inline(__always)
+    @inlinable
     public func exportTo(hitch: Hitch) -> Hitch {
         switch internalType {
         case .null:
@@ -936,27 +936,27 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
 public enum Spanker {
 
-    @inlinable @inline(__always)
+    @inlinable
     public static func parsed<T>(hitch: Hitch, _ callback: (JsonElement?) -> T?) -> T? {
         return Reader.parsed(hitch: hitch, callback)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public static func parsed<T>(halfhitch: HalfHitch, _ callback: (JsonElement?) -> T?) -> T? {
         return Reader.parsed(halfhitch: halfhitch, callback)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public static func parsed<T>(data: Data, _ callback: (JsonElement?) -> T?) -> T? {
         return Reader.parsed(data: data, callback)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
         return Reader.parsed(string: string, callback)
     }
 
-    @inlinable @inline(__always)
+    @inlinable
     public static func parse(halfhitch: HalfHitch) -> JsonElement? {
         return Reader.parse(halfhitch: halfhitch)
     }

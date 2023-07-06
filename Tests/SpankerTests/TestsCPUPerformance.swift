@@ -5,11 +5,11 @@ import Spanker
 
 class SpankerTestsCPUPerformance: TestsBase {
     
-    /*
+    
     var largeData: Data = Data()
     
     override func setUp() {
-        let largeDataPath = "/Volumes/Storage/large.minified.json"
+        let largeDataPath = "/Users/rjbowli/Development/data/large.minified.json"
         largeData = try! Data(contentsOf: URL(fileURLWithPath: largeDataPath))
     }
     
@@ -26,11 +26,13 @@ class SpankerTestsCPUPerformance: TestsBase {
     func test_large_load() {
         
         // 0.387
+        // -- inlinable always -- 0.367
+        // -- inlinable -- 0.368
         measure {
             largeData.parsed { results in
                 XCTAssertEqual(results?.count, 11351)
             }
         }
     }
-    */
+    
 }

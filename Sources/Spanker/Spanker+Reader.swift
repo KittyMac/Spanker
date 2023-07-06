@@ -1,7 +1,7 @@
 import Foundation
 import Hitch
 
-@inlinable @inline(__always)
+@inlinable
 internal func strskip(json: HalfHitch, offset: Int, _ params: UInt8...) -> Int {
     var idx = offset
     for char in json.stride(from: offset, to: json.count) {
@@ -12,7 +12,7 @@ internal func strskip(json: HalfHitch, offset: Int, _ params: UInt8...) -> Int {
     return idx
 }
 
-@inlinable @inline(__always)
+@inlinable
 internal func strstrNoEscaped(json: HalfHitch,
                               offset: Int,
                               find: UInt8,
@@ -43,7 +43,7 @@ internal func strstrNoEscaped(json: HalfHitch,
     return idx
 }
 
-@inlinable @inline(__always)
+@inlinable
 internal func strstrRegex(json: HalfHitch,
                           offset: Int,
                           find: UInt8) -> Int {
