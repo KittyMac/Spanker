@@ -33,6 +33,13 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_invalid_json() {
+            let json = #"kvhbjdfgvi"#
+            json.parsed { result in
+                XCTAssertNil(result)
+            }
+        }
+    
     func test_empty_array() {
         let json = #"[]"#
         json.parsed { result in

@@ -509,6 +509,10 @@ extension Spanker {
             while elementStack.count > 0 {
                 jsonElement = parseEndElement()
             }
+            
+            if rootElement?.type == .null {
+                return nil
+            }
 
             return rootElement
         }
