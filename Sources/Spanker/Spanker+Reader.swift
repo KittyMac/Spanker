@@ -302,8 +302,6 @@ extension Spanker {
                                 appendElement(key, attributeAsRegex(nextCurrentIdx))
 
                                 jsonAttribute.clear()
-
-                                nextCurrentIdx += 1
                             } else if nextChar == .doubleQuote {
                                 // our value is a string
                                 jsonAttribute.type = .string
@@ -417,8 +415,6 @@ extension Spanker {
                             appendElement(nil, attributeAsRegex(nextCurrentIdx))
 
                             jsonAttribute.clear()
-
-                            nextCurrentIdx += 1
                         } else if nextChar == .doubleQuote {
                             // our value is a string
                             jsonAttribute.type = .string

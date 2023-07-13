@@ -351,7 +351,8 @@ class SpankerTests: TestsBase {
             #"/\d+/"#,
             #"/\d+/"#,
             #"[/\d+/]"#,
-            #"{"regex":/\d+/}"#,
+            #"{"regex":/\d+/i}"#,
+            #"[[/(?:\d*[\.\,]\d\d|^\$\d*)/],1]"#,
         ]
         for json in jsons {
             json.parsed { result in
