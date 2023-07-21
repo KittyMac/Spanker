@@ -165,15 +165,15 @@ extension Spanker {
                 return JsonElement(regex: valueString)
             }
 
-            let attributeAsInt: (Int) -> JsonElement = { endIdx in
+            let attributeAsInt: (Int) -> JsonElement? = { endIdx in
                 let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
-                guard let value = valueString.toInt() else { return JsonElement() }
+                guard let value = valueString.toInt() else { return nil }
                 return JsonElement(int: value)
             }
 
-            let attributeAsDouble: (Int) -> JsonElement = { endIdx in
+            let attributeAsDouble: (Int) -> JsonElement? = { endIdx in
                 let valueString = HalfHitch(source: json, from: jsonAttribute.valueIdx, to: endIdx)
-                guard let value = valueString.toDouble() else { return JsonElement() }
+                guard let value = valueString.toDouble() else { return nil }
                 return JsonElement(double: value)
             }
 
@@ -186,7 +186,8 @@ extension Spanker {
                 return name
             }
 
-            let appendElement: (HalfHitch?, JsonElement) -> Void = { key, value in
+            let appendElement: (HalfHitch?, JsonElement?) -> Void = { key, value in
+                guard let value = value else { return }
                 if let jsonElement = jsonElement {
                     if jsonElement.type == .array {
                         jsonElement.append(value: value)
@@ -506,10 +507,6 @@ extension Spanker {
                 jsonElement = parseEndElement()
             }
             
-            if rootElement?.type == .null {
-                return nil
-            }
-
             return rootElement
         }
     }

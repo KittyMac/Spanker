@@ -330,6 +330,28 @@ class SpankerTests: TestsBase {
         XCTAssertEqual(element.values.toHitch(), #"[1,2,3,4]"#)
     }
     
+    func test_null_and_invalid() {
+        "null".parsed { result in
+            XCTAssertEqual("null", result?.description)
+        }
+        
+        "[null]".parsed { result in
+            XCTAssertEqual("[null]", result?.description)
+        }
+        
+        "lbv dkfgh".parsed { result in
+            XCTAssertEqual(nil, result?.description)
+        }
+        
+        "lbv.dkfgh".parsed { result in
+            XCTAssertEqual(nil, result?.description)
+        }
+        
+        "".parsed { result in
+            XCTAssertEqual(nil, result?.description)
+        }
+    }
+    
     func test_boolean() {
         let jsons = [
             #"true"#,
