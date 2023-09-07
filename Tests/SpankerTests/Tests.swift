@@ -325,6 +325,25 @@ class SpankerTests: TestsBase {
         let stringDict: [String: String?] = ["a":"b"]
         let stringArray: [String] = ["a","b"]
         
+        let optional: String? = nil
+        let _ = ^[
+            "sessionUUID": 1,
+            "userId": 2,
+            "merchantId": 3,
+            "username": optional,
+            
+            // NOTE: uncommenting these will lead to error like:
+            // Cannot convert value of type '[String : String?]' to expected dictionary value type '(any JsonElementable)?
+            // This is because I cannot yet figure out how to properly extend Dictionary to work with optional values
+            // in all cased. What we have now is a middle ground: we extend Dictionary where the value is set to
+            // JsonElementable?, which more properly defaults to dictionary with optional values. However, Swift is
+            // the unable to coerce things like existing [String: String] variables to JsonElementable. To combat this
+            // we provide custom init on JsonElement(unknown: Array) and JsonElement(unknown: Dictionary), which makes
+            // the explicit init work. However it means the implicit coersion of these two variables will still fail.
+            // "dict": stringDict,
+            // "array": stringArray
+        ]
+        
         XCTAssertEqual(JsonElement(unknown: stringDict).toHitch(), #"{"a":"b"}"#)
         XCTAssertEqual(JsonElement(unknown: stringArray).toHitch(), #"["a","b"]"#)
     }
