@@ -321,6 +321,14 @@ class SpankerTests: TestsBase {
         ]).toHitch(), #"[null,null,true,false,1,1.0,"hello",[1,2,3],{"a":"b"}]"#)
     }
     
+    func test_unknown1() {
+        let stringDict: [String: String?] = ["a":"b"]
+        let stringArray: [String] = ["a","b"]
+        
+        XCTAssertEqual(JsonElement(unknown: stringDict).toHitch(), #"{"a":"b"}"#)
+        XCTAssertEqual(JsonElement(unknown: stringArray).toHitch(), #"["a","b"]"#)
+    }
+    
     func test_values() {
         let element = JsonElement(unknown: [:])
         element.set(key: "a", value: 1)

@@ -240,6 +240,7 @@ extension NSNumber: JsonElementable {
     }
 }
 
+/*
 public typealias JsonElementableArray = [JsonElementable?]
 extension JsonElementableArray: JsonElementable {
     public func toJsonElement() -> JsonElement {
@@ -256,7 +257,7 @@ extension JsonElementableArray: JsonElementable {
     }
 }
 
-public typealias JsonElementableDictionary = [String: JsonElementable?]
+ public typealias JsonElementableDictionary = [String: JsonElementable?]
 extension JsonElementableDictionary: JsonElementable {
     public func toJsonElement() -> JsonElement {
         return JsonElement(keys: keys.map { HalfHitch(string: $0) },
@@ -271,6 +272,56 @@ extension JsonElementableDictionary: JsonElementable {
         internalType = .dictionary
         keyArray = self.keys.map { HalfHitch(string: $0) }
         valueArray = self.values.map { JsonElement(unknown: $0) }
+    }
+}
+*/
+
+extension Array: JsonElementable {
+    public func toJsonElement() -> JsonElement {
+        return JsonElement(array: map {
+            guard let element = $0 as? JsonElementable else { return JsonElement.null() }
+            return element.toJsonElement()
+        })
+    }
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .array
+        valueArray = self.map {
+            guard let element = $0 as? JsonElementable else { return JsonElement.null() }
+            return JsonElement(unknown: element.toJsonElement())
+        }
+    }
+}
+
+extension Dictionary: JsonElementable {
+    public func toJsonElement() -> JsonElement {
+        let element = JsonElement(unknown: [:])
+        for (key, value) in self {
+            guard let keyString = key as? String else { continue }
+            let value = (value as? JsonElementable) ?? JsonElement.null()
+            element.set(key: HalfHitch(string: keyString), value: value)
+        }
+        return element
+    }
+    public func fillJsonElement(internalType: inout JsonType,
+                                valueInt: inout Int,
+                                valueDouble: inout Double,
+                                valueString: inout HalfHitch,
+                                valueArray: inout [JsonElement],
+                                keyArray: inout [HalfHitch]) {
+        internalType = .dictionary
+        valueArray = []
+        keyArray = []
+        for (key, value) in self {
+            guard let keyString = key as? String else { continue }
+            guard let value = value as? JsonElementable else { continue }
+            keyArray.append(HalfHitch(string: keyString))
+            valueArray.append(value.toJsonElement())
+        }
     }
 }
 
@@ -678,6 +729,16 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                                  valueString: &valueString,
                                  valueArray: &valueArray,
                                  keyArray: &keyArray)
+    }
+    
+    public init(unknown: JsonElementable) {
+        internalType = .null
+        unknown.fillJsonElement(internalType: &internalType,
+                                valueInt: &valueInt,
+                                valueDouble: &valueDouble,
+                                valueString: &valueString,
+                                valueArray: &valueArray,
+                                keyArray: &keyArray)
     }
 
     @inlinable
