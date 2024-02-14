@@ -1,6 +1,11 @@
 import Foundation
 import Hitch
 
+fileprivate typealias JsonAny = Any?
+fileprivate typealias JsonArray = [JsonAny]
+fileprivate typealias JsonDictionary = [String: JsonAny]
+
+
 prefix operator ^
 public prefix func ^ (value: JsonElementable?) -> JsonElement {
     return JsonElement(unknown: value)
@@ -690,21 +695,62 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                                 keyArray: &keyArray)
     }
     
-    public init(unknown: Array<Any?>) {
-        internalType = .array
-        valueArray = unknown.map {
-            if let element = $0 as? JsonElementable { return element.toJsonElement() }
-            if let element = $0 as? JsonElementableArray { return element.toJsonElement() }
-            if let element = $0 as? JsonElementableDictionary { return element.toJsonElement() }
-            return JsonElement.null()
+    public init(unknown: Any?) {
+        internalType = .null
+        guard let unknown = unknown else { return }
+        
+        switch unknown {
+        case _ as NSNull:
+            return
+        case let value as Int:
+            internalType = .int
+            valueInt = value
+        case let value as Double:
+            internalType = .double
+            valueDouble = value
+        case let value as Float:
+            internalType = .double
+            valueDouble = Double(value)
+        case let value as NSNumber:
+            internalType = .double
+            valueDouble = value.doubleValue
+        case let value as Bool:
+            internalType = .boolean
+            valueInt = value == true ? 1 : 0
+        case let value as Hitch:
+            internalType = .string
+            valueString = value.halfhitch()
+        case let value as HalfHitch:
+            internalType = .string
+            valueString = value
+        case let value as String:
+            internalType = .string
+            valueString = HalfHitch(string: value)
+        case let value as JsonArray:
+            create(array: value)
+        case let value as JsonDictionary:
+            create(dictionary: value)
+        default:
+            fatalError("internal error")
         }
     }
     
-    public init(unknown: Dictionary<AnyHashable, Any?>) {
+    fileprivate func create(array: Array<Any?>) {
+        internalType = .array
+                
+        valueArray = array.map {
+            if let element = $0 as? JsonElementable { return element.toJsonElement() }
+            if let element = $0 as? JsonElementableArray { return element.toJsonElement() }
+            if let element = $0 as? JsonElementableDictionary { return element.toJsonElement() }
+            return JsonElement(unknown: $0)
+        }
+    }
+    
+    fileprivate func create(dictionary: Dictionary<AnyHashable, Any?>) {
         internalType = .dictionary
         valueArray = []
         keyArray = []
-        for (key, value) in unknown {
+        for (key, value) in dictionary {
             guard let keyString = key as? String else { continue }
             keyArray.append(HalfHitch(string: keyString))
             
