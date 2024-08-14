@@ -10,7 +10,11 @@ class SpankerTestsCPUPerformance: TestsBase {
     
     override func setUp() {
         let largeDataPath = "/Users/rjbowli/Development/data/large.minified.json"
-        largeData = try! Data(contentsOf: URL(fileURLWithPath: largeDataPath))
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: largeDataPath)) {
+            largeData = data
+        } else {
+            print("warning: large.minified.json missing")
+        }
     }
     
     func test_baseline() {
