@@ -768,21 +768,30 @@ public final class JsonElement: CustomStringConvertible, Equatable {
 
     @inlinable
     public var description: String {
-        return exportTo(hitch: Hitch(capacity: 1024),
+        let count = estimatedExportCount(pretty: false,
+                                         level: 0,
+                                         inCount: 0)
+        return exportTo(hitch: Hitch(capacity: count),
                         pretty: false,
                         level: 0).description
     }
 
     @inlinable
     public func toString(pretty: Bool = false) -> String {
-        return exportTo(hitch: Hitch(capacity: 1024),
+        let count = estimatedExportCount(pretty: pretty,
+                                         level: 0,
+                                         inCount: 0)
+        return exportTo(hitch: Hitch(capacity: count),
                         pretty: pretty,
                         level: 0).toString()
     }
 
     @inlinable
     public func toHitch(pretty: Bool = false) -> Hitch {
-        return exportTo(hitch: Hitch(capacity: 1024),
+        let count = estimatedExportCount(pretty: pretty,
+                                         level: 0,
+                                         inCount: 0)
+        return exportTo(hitch: Hitch(capacity: count),
                         pretty: pretty,
                         level: 0)
     }
@@ -1057,6 +1066,71 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             hitch.append(.closeBracket)
         }
         return hitch
+    }
+    
+    public func estimatedExportCount(pretty: Bool,
+                                     level: Int,
+                                     inCount: Int) -> Int {
+        var count = inCount
+        
+        func nextLine(offset: Int) {
+            guard pretty else { return }
+            count += 1
+            for _ in 0..<(level+offset) {
+                count += 4
+            }
+        }
+        
+        switch internalType {
+        case .null:
+            count += 4
+        case .boolean:
+            if valueInt != 0 {
+                count += 4
+            } else {
+                count += 5
+            }
+        case .string:
+            count += 2 + valueString.count * 2
+        case .regex:
+            count += valueString.count * 2
+        case .int:
+            count += 32
+        case .double:
+            count += 32
+        case .array:
+            count += 2
+            for idx in 0..<valueArray.count {
+                nextLine(offset: 1)
+                count = valueArray[idx].estimatedExportCount(pretty: pretty,
+                                                             level: level + 1,
+                                                             inCount: count)
+                if idx < valueArray.count - 1 {
+                    count += 1
+                } else {
+                    nextLine(offset: 0)
+                }
+            }
+        case .dictionary:
+            count += 2
+            for idx in 0..<keyArray.count {
+                nextLine(offset: 1)
+                count += 3
+                count += keyArray[idx].count
+                if pretty {
+                    count += 1
+                }
+                count = valueArray[idx].estimatedExportCount(pretty: pretty,
+                                                             level: level + 1,
+                                                             inCount: count)
+                if idx < keyArray.count - 1 {
+                    count += 1
+                } else {
+                    nextLine(offset: 0)
+                }
+            }
+        }
+        return count
     }
 }
 
