@@ -1048,7 +1048,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             for idx in 0..<keyArray.count {
                 nextLine(offset: 1)
                 hitch.append(.doubleQuote)
-                hitch.append(keyArray[idx])
+                // Key needs to be escaped for JSON
+                hitch.append(keyArray[idx].escaped(unicode: false, singleQuotes: false))
                 hitch.append(.doubleQuote)
                 hitch.append(.colon)
                 if pretty {

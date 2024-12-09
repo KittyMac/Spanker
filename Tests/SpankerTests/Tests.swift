@@ -747,7 +747,26 @@ class SpankerTests: TestsBase {
         XCTAssertEqual(jsonA.toHitch(), #"[1,2,4,5]"#)
     }
 
-    
+    func test_key_escaping_in_dictionary() {
+        // Test dictionary with escaped backslash in key
+        let dict: JsonElementableDictionary = [
+            "U>\\{": "value1",  // Key with backslash that needs escaping
+            "normal": "value2"   // Normal key for comparison
+        ]
+
+        let element = dict.toJsonElement()
+        let jsonString = element.toHitch().toString()
+
+        // The key should be properly escaped in the output JSON
+        XCTAssertTrue(jsonString.contains("\"U>\\\\{\""))
+
+        // Verify we can parse it back
+        jsonString.parsed { result in
+            XCTAssertEqual(result?[string: "U>\\{"], "value1")
+            XCTAssertEqual(result?[string: "normal"], "value2")
+        }
+    }
+
 }
 
 
