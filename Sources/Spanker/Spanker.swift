@@ -760,6 +760,8 @@ public final class JsonElement: CustomStringConvertible, Equatable {
                 valueArray.append(value.toJsonElement())
             } else if let value = value as? JsonElementableDictionary {
                 valueArray.append(value.toJsonElement())
+            } else if let value = value as? [AnyHashable: Any?] {
+                valueArray.append(JsonElement(unknown: value))
             } else {
                 valueArray.append(JsonElement.null())
             }

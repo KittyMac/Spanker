@@ -33,12 +33,43 @@ class SpankerTests: TestsBase {
         }
     }
     
+    func test_any() {
+        let element = JsonElement(unknown: [
+            "Source": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_british.html",
+            "Earth": [
+                "AtmosphericPressure": 1.0
+            ],
+            "Mars": [
+                "AtmosphericPressure": 0.01
+            ],
+            "Venus": [
+                "AtmosphericPressure": 91
+            ]
+        ])
+        XCTAssertEqual(element.sortAll().toString(), #"{"Mars":{"AtmosphericPressure":0.01},"Earth":{"AtmosphericPressure":1.0},"Venus":{"AtmosphericPressure":91},"Source":"https://nssdc.gsfc.nasa.gov/planetary/factsheet/planet_table_british.html"}"#)
+    }
+    
+    func test_any2() {
+        let element = JsonElement(unknown: [
+            "value" : "test value",
+            "array": [1,2,3],
+            "dict": [
+                "value": "test-child-value",
+                "array": ["this", "child", "array"],
+                "nested-dict": [
+                    "third-level-key":3
+                ]
+            ]
+        ])
+        XCTAssertEqual(element.sortAll().toString(), #"{"dict":{"array":["this","array","child"],"value":"test-child-value","nested-dict":{"third-level-key":3}},"array":[1,2,3],"value":"test value"}"#)
+    }
+    
     func test_invalid_json() {
-            let json = #"kvhbjdfgvi"#
-            json.parsed { result in
-                XCTAssertNil(result)
-            }
+        let json = #"kvhbjdfgvi"#
+        json.parsed { result in
+            XCTAssertNil(result)
         }
+    }
     
     func test_empty_array() {
         let json = #"[]"#
