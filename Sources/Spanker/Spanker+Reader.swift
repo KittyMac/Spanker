@@ -1,7 +1,6 @@
 import Foundation
 import Hitch
 
-@inlinable
 internal func strskip(json: HalfHitch, offset: Int, _ params: UInt8...) -> Int {
     var idx = offset
     for char in json.stride(from: offset, to: json.count) {
@@ -12,7 +11,6 @@ internal func strskip(json: HalfHitch, offset: Int, _ params: UInt8...) -> Int {
     return idx
 }
 
-@inlinable
 internal func strstrNoEscaped(json: HalfHitch,
                               offset: Int,
                               find: UInt8,
@@ -43,7 +41,6 @@ internal func strstrNoEscaped(json: HalfHitch,
     return idx
 }
 
-@inlinable
 internal func strstrRegex(json: HalfHitch,
                           offset: Int,
                           find: UInt8) -> Int {
@@ -103,32 +100,32 @@ extension Spanker {
         }
     }
 
-    @usableFromInline
+    
     internal enum Reader {
 
-        @usableFromInline
+        
         internal static func parsed<T>(hitch: Hitch, _ callback: (JsonElement?) -> T?) -> T? {
             return parsed(halfhitch: hitch.halfhitch(), callback)
         }
 
-        @usableFromInline
+        
         internal static func parsed<T>(string: String, _ callback: (JsonElement?) -> T?) -> T? {
             return parsed(halfhitch: HalfHitch(string: string), callback)
         }
 
-        @usableFromInline
+        
         internal static func parsed<T>(data: Data, _ callback: (JsonElement?) -> T?) -> T? {
             return HalfHitch.using(data: data) { json in
                 return parsed(halfhitch: json, callback)
             }
         }
 
-        @usableFromInline
+        
         internal static func parsed<T>(halfhitch json: HalfHitch, _ callback: (JsonElement?) -> T?) -> T? {
             callback(parse(halfhitch: json))
         }
 
-        @usableFromInline
+        
         internal static func parse(halfhitch json: HalfHitch) -> JsonElement? {
             var currentIdx = 0
             var char: UInt8 = 0
