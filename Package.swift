@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "Spanker",
     products: [
-        .library(name: "Spanker", type: .dynamic, targets: ["Spanker"]),
+        .library(name: "Spanker", targets: ["Spanker"]),
     ],
     dependencies: [
         .package(url: "https://github.com/KittyMac/Hitch.git", from: "0.4.0"),
