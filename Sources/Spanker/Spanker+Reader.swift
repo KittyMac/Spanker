@@ -275,6 +275,7 @@ extension Spanker {
                             }
 
                             // advance forward until we find the start of the next thing
+                            guard nextCurrentIdx < json.count else { break }
                             var nextChar = raw[nextCurrentIdx]
                             
                             if nextChar == .forwardSlash {
@@ -365,6 +366,8 @@ extension Spanker {
                                         jsonAttribute.type = .double
                                     }
                                     nextCurrentIdx += 1
+                                    
+                                    guard nextCurrentIdx < json.count else { break }
                                     nextChar = raw[nextCurrentIdx]
                                 }
 
@@ -387,8 +390,9 @@ extension Spanker {
                         }
                     } else {
                         nextCurrentIdx = strskip(json: json, offset: currentIdx, .space, .tab, .newLine, .carriageReturn)
-
+                        
                         // advance forward until we find the start of the next thing
+                        guard nextCurrentIdx < json.count else { break }
                         var nextChar = raw[nextCurrentIdx]
                         if nextChar == .forwardSlash {
                             // our value is a regex
@@ -479,6 +483,8 @@ extension Spanker {
                                     jsonAttribute.type = .double
                                 }
                                 nextCurrentIdx += 1
+                                
+                                guard nextCurrentIdx < json.count else { break }
                                 nextChar = raw[nextCurrentIdx]
                             }
 
