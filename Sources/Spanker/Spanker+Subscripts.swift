@@ -57,28 +57,28 @@ public extension JsonElement {
 
     subscript (key: String) -> JsonElement? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> JsonElement? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
 
     subscript (element key: String) -> JsonElement? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (element key: StaticString) -> JsonElement? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -132,14 +132,14 @@ public extension JsonElement {
 
     subscript (key: String) -> HalfHitch? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> HalfHitch? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -200,14 +200,14 @@ public extension JsonElement {
 
     subscript (key: String) -> Hitch? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> Hitch? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -268,14 +268,14 @@ public extension JsonElement {
 
     subscript (key: String) -> String? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> String? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -336,14 +336,14 @@ public extension JsonElement {
 
     subscript (key: String) -> Int? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> Int? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -407,14 +407,14 @@ public extension JsonElement {
 
     subscript (key: String) -> Double? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> Double? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -478,14 +478,14 @@ public extension JsonElement {
 
     subscript (key: String) -> Float? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> Float? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
@@ -546,14 +546,14 @@ public extension JsonElement {
 
     subscript (key: String) -> Bool? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(string: key)]
         }
     }
     
 
     subscript (key: StaticString) -> Bool? {
         get {
-            return self[HalfHitch(hashOnly: key)]
+            return self[HalfHitch(stringLiteral: key)]
         }
     }
 
