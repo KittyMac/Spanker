@@ -86,20 +86,61 @@ class ParquetEncoderTests: TestsBase {
         }
     }
 
-    // Opt-in: writes a real Parquet file for external validation. No-op unless
-    // PARQUET_OUT is set, so it never fails CI. Uses the default (snappy) codec,
-    // so validate.py exercises the real Snappy path end-to-end.
+    func test_parquet_chunked_envelope_is_valid() throws {
+        // 250 rows with a small row group and page size -> multiple row groups,
+        // multiple pages per chunk. Structure must still be a valid envelope.
+        let json = "[" + (0..<250).map { "{\"a\":\($0)}" }.joined(separator: ",") + "]"
+        let opts = ParquetWriteOptions(rowsPerRowGroup: 100, rowsPerPage: 40)
+        let data = try XCTUnwrap(json.parsed { $0?.toParquet(writeOptions: opts) })
+        let b = [UInt8](data)
+        XCTAssertGreaterThan(b.count, 12)
+        XCTAssertEqual(Array(b.prefix(4)), [0x50, 0x41, 0x52, 0x31])
+        XCTAssertEqual(Array(b.suffix(4)), [0x50, 0x41, 0x52, 0x31])
+        let metaLen = Int(leU32(b, b.count - 8))
+        XCTAssertGreaterThan(metaLen, 0)
+        XCTAssertLessThanOrEqual(metaLen, b.count - 12)
+    }
+
+    // The streaming path (materialize per row-group slice) and the whole-table
+    // path (materialize all, then slice) must produce byte-identical files for
+    // the same options. Exercises multi-row-group, multi-page, and a nullable
+    // column whose nulls straddle both boundaries.
+    func test_parquet_streaming_matches_whole_table() throws {
+        let rows = (0..<250).map { i in
+            i % 4 == 0 ? "{\"a\":\(i)}" : "{\"a\":\(i),\"b\":\(i)}"
+        }
+        let json = "[" + rows.joined(separator: ",") + "]"
+        let opts = ParquetWriteOptions(rowsPerRowGroup: 60, rowsPerPage: 25, compression: .snappy)
+
+        let streamed = try XCTUnwrap(json.parsed { $0?.toParquet(writeOptions: opts) })
+        let whole = try XCTUnwrap(json.parsed { $0?.toParquetTable().exportParquet(options: opts) })
+        XCTAssertEqual([UInt8](streamed), [UInt8](whole))
+    }
+
+    // Opt-in: streams a real, multi-row-group Parquet file to disk for external
+    // validation. No-op unless PARQUET_OUT is set, so it never fails CI. Small
+    // row groups force chunking so validate.py reports several row groups.
+    //
+    //   PARQUET_OUT=/tmp/out.parquet swift test --filter test_parquet_write_file
+    //   python3 validate.py /tmp/out.parquet
     func test_parquet_write_file() throws {
-        let path = "/tmp/sample.parquet"
-        let json = #"""
-        [{"id":1,"name":"alice","score":9.5,"active":true,"tags":["a","b"]},
-         {"id":2,"name":"bob","active":false},
-         {"id":3,"name":"carol","score":7,"active":true,"note":null}]
-        """#
-        let data: Data? = json.parsed { $0?.toParquet() }
-        let bytes = try XCTUnwrap(data)
-        try bytes.write(to: URL(fileURLWithPath: path))
-        print("wrote \(bytes.count) bytes to \(path)")
+        guard let path = ProcessInfo.processInfo.environment["PARQUET_OUT"] else { return }
+        let rows = (0..<500).map { i in
+            i % 5 == 0
+                ? "{\"id\":\(i),\"name\":\"row\(i)\"}"
+                : "{\"id\":\(i),\"name\":\"row\(i)\",\"score\":\(Double(i) / 2.0),\"active\":\(i % 2 == 0)}"
+        }
+        let json = "[" + rows.joined(separator: ",") + "]"
+        let opts = ParquetWriteOptions(rowsPerRowGroup: 150, rowsPerPage: 50, compression: .snappy)
+        var written = 0
+        var thrown: Error?
+        json.parsed { element in
+            guard let element = element else { return }
+            do { written = try element.writeParquet(toFile: URL(fileURLWithPath: path), writeOptions: opts) }
+            catch { thrown = error }
+        }
+        if let thrown = thrown { throw thrown }
+        print("wrote \(written) bytes to \(path)")
     }
     
     func test_receipts() throws {
@@ -109,7 +150,5 @@ class ParquetEncoderTests: TestsBase {
         let bytes = try XCTUnwrap(data)
         try bytes.write(to: URL(fileURLWithPath: path))
         print("wrote \(bytes.count) bytes to \(path)")
-
     }
-
 }

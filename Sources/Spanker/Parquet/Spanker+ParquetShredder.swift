@@ -5,29 +5,23 @@ import Hitch
 
 // MARK: - Parquet shredding (Layer 1 of 2)
 //
-// This file is the "shredder": it takes a schemaless `JsonElement` tree and
-// produces a fixed columnar representation plus an inferred schema. It knows
-// NOTHING about the Parquet byte format (Thrift, pages, encodings, compression).
-// That is the job of the downstream encoder, which consumes a `ParquetTable`.
+// Takes a schemaless `JsonElement` tree and produces a fixed columnar model
+// plus an inferred schema. Knows nothing about the Parquet byte format.
 //
-// Keeping the two layers separate means the shredder is fully unit-testable on
-// its own, and the encoder can later be swapped (e.g. for a native backend)
-// without touching any of the semantic decisions made here.
+// The model is split into two reusable steps so large tables can stream:
+//   plan()        - one full scan that fixes the schema (types + nullability +
+//                   column order). Cheap: it inspects values but copies none.
+//   materialize() - builds the columns for a row range [start, end) using the
+//                   already-fixed schema. Called once for the whole table, or
+//                   once per row-group slice by the streaming writer.
 //
-// SCOPE (phase 1 / "Tier 1"): flat columns only. Nested dictionaries/arrays are
-// stored as JSON text in a BYTE_ARRAY(JSON) column rather than being exploded
-// into Parquet GROUP/LIST columns via the Dremel model. Full nested support is a
-// later phase and can be layered on without changing this public surface.
+// SCOPE (phase 1): flat columns. Nested values are stored as JSON text in a
+// BYTE_ARRAY(JSON) column rather than exploded into Parquet GROUP/LIST columns.
 
 // MARK: - Logical column type
 
-/// The logical type of a shredded column. The encoder maps these to Parquet
-/// physical types + logical/converted-type annotations:
-///   .boolean -> BOOLEAN
-///   .int64   -> INT64
-///   .double  -> DOUBLE
-///   .string  -> BYTE_ARRAY (UTF8)
-///   .json    -> BYTE_ARRAY (JSON)   // nested values, or an irreconcilable mix
+/// Logical type of a shredded column; the encoder maps these to Parquet
+/// physical types + annotations (.string -> UTF8, .json -> JSON, both BYTE_ARRAY).
 public enum ParquetLogicalType: UInt8, Equatable {
     case boolean
     case int64
@@ -38,12 +32,10 @@ public enum ParquetLogicalType: UInt8, Equatable {
 
 // MARK: - Schema
 
-/// One column in the inferred schema.
 public struct ParquetField: Equatable {
     public let name: Hitch
     public let type: ParquetLogicalType
-    /// `true` if any row is missing this key or has an explicit JSON null for it.
-    /// The encoder emits OPTIONAL (with definition levels) when nullable, else REQUIRED.
+    /// `true` if any row is missing this key or has an explicit JSON null.
     public let nullable: Bool
 
     public init(name: Hitch, type: ParquetLogicalType, nullable: Bool) {
@@ -55,40 +47,31 @@ public struct ParquetField: Equatable {
 
 // MARK: - Columnar storage
 
-/// Holds ONLY the present (non-null) values for a column, in row order. This
-/// mirrors Parquet's on-disk layout: a data page stores definition levels plus
-/// the compacted list of non-null values.
+/// Holds ONLY the present (non-null) values for a column, in row order.
 public enum ParquetColumnStorage: Equatable {
     case boolean([Bool])
     case int64([Int64])
     case double([Double])
-    case bytes([Hitch])   // backing store for both .string and .json columns
+    case bytes([Hitch])   // backs both .string and .json columns
 }
 
-/// A single materialized column.
 public struct ParquetColumn: Equatable {
     public let field: ParquetField
-    /// Per-row definition levels: 1 = value present, 0 = null.
-    /// Empty when the column is REQUIRED (`field.nullable == false`); in that
-    /// case every row is present, so the encoder can omit levels entirely.
+    /// Per-row definition levels (1 = present, 0 = null). Empty when REQUIRED.
     public let definitionLevels: [UInt8]
     /// Present (non-null) values only.
     public let storage: ParquetColumnStorage
 
-    public init(field: ParquetField,
-                definitionLevels: [UInt8],
-                storage: ParquetColumnStorage) {
+    public init(field: ParquetField, definitionLevels: [UInt8], storage: ParquetColumnStorage) {
         self.field = field
         self.definitionLevels = definitionLevels
         self.storage = storage
     }
 }
 
-/// The complete columnar table handed to the encoder.
 public struct ParquetTable: Equatable {
     public let rowCount: Int
     public let columns: [ParquetColumn]
-
     public var schema: [ParquetField] { columns.map { $0.field } }
 
     public init(rowCount: Int, columns: [ParquetColumn]) {
@@ -100,73 +83,102 @@ public struct ParquetTable: Equatable {
 // MARK: - Options
 
 public struct ParquetShredOptions {
-    /// Column name used when the top level is not an array-of-objects (i.e. a
-    /// bare scalar, or an array whose elements are not all dictionaries).
+    /// Column name when the top level is not an array-of-objects.
     public var scalarColumnName: Hitch
-
     public init(scalarColumnName: Hitch = "value") {
         self.scalarColumnName = scalarColumnName
     }
 }
 
-// MARK: - Public entrypoint
+// MARK: - Public entrypoints
 
 public extension JsonElement {
-    /// Shred this element into a columnar `ParquetTable`.
-    ///
-    /// Row/column mapping:
-    ///   - array of objects        -> one row per object; columns = union of keys
-    ///   - single object           -> one row; columns = its keys
-    ///   - array of non-objects    -> one column (`options.scalarColumnName`), one row per element
-    ///   - bare scalar             -> one row, one column (`options.scalarColumnName`)
+    /// Shred this element into a fully-materialized columnar `ParquetTable`.
     func toParquetTable(options: ParquetShredOptions = ParquetShredOptions()) -> ParquetTable {
         return ParquetShredder.shred(self, options: options)
     }
+
+    /// Shred and serialize to Parquet, streaming row groups into `sink`. Only
+    /// one row group is materialized at a time, so peak memory is bounded by
+    /// `writeOptions.rowsPerRowGroup` rather than the whole table.
+    func writeParquet(to sink: ParquetSink,
+                      shredOptions: ParquetShredOptions = ParquetShredOptions(),
+                      writeOptions: ParquetWriteOptions = ParquetWriteOptions()) {
+        let plan = ParquetShredder.plan(self, options: shredOptions)
+        let writer = ParquetWriter(sink: sink, schema: plan.fields, options: writeOptions)
+        let n = plan.rowCount
+        var r = 0
+        while r < n {
+            let e = min(r + writeOptions.rowsPerRowGroup, n)
+            writer.writeRowGroup(columns: ParquetShredder.materialize(plan, rowStart: r, rowEnd: e),
+                                 rowCount: e - r)
+            r = e
+        }
+        writer.finish()
+    }
+
+    /// Convenience: stream Parquet to a file. Returns bytes written.
+    @discardableResult
+    func writeParquet(toFile url: URL,
+                      shredOptions: ParquetShredOptions = ParquetShredOptions(),
+                      writeOptions: ParquetWriteOptions = ParquetWriteOptions()) throws -> Int {
+        let sink = try ParquetFileSink(url: url)
+        defer { sink.close() }
+        writeParquet(to: sink, shredOptions: shredOptions, writeOptions: writeOptions)
+        return sink.offset
+    }
+
+    /// Convenience: shred and serialize the whole table to Parquet bytes.
+    func toParquet(shredOptions: ParquetShredOptions = ParquetShredOptions(),
+                   writeOptions: ParquetWriteOptions = ParquetWriteOptions()) -> Data {
+        let sink = ParquetDataSink()
+        writeParquet(to: sink, shredOptions: shredOptions, writeOptions: writeOptions)
+        return sink.data
+    }
+}
+
+// MARK: - Schema plan
+
+/// The fixed schema plus everything `materialize` needs to build any row slice.
+struct SchemaPlan {
+    enum Mode { case records, single }
+    let mode: Mode
+    let rows: [JsonElement]
+    let fields: [ParquetField]
+    let order: [HalfHitch]        // records mode: column key by index
+    let index: [HalfHitch: Int]   // records mode: key -> column index
+    var rowCount: Int { rows.count }
 }
 
 // MARK: - Shredder
 
 public enum ParquetShredder {
 
-    private enum Mode {
-        case records      // each row is a dictionary; columns come from keys
-        case singleColumn // each row is a scalar/array value; one synthetic column
-    }
-
-    /// Type-inference lattice. `join` computes the least upper bound; `.unknown`
-    /// is the identity (a column that has only seen nulls stays `.unknown`).
     private enum Inferred: Equatable {
-        case unknown
-        case boolean
-        case int64
-        case double
-        case string
-        case json
+        case unknown, boolean, int64, double, string, json
     }
 
     public static func shred(_ element: JsonElement,
                              options: ParquetShredOptions = ParquetShredOptions()) -> ParquetTable {
-        let (rows, mode) = rowsAndMode(for: element)
-        switch mode {
-        case .records:      return shredRecords(rows: rows, options: options)
-        case .singleColumn: return shredSingleColumn(rows: rows, options: options)
-        }
+        let plan = plan(element, options: options)
+        return ParquetTable(rowCount: plan.rowCount,
+                            columns: materialize(plan, rowStart: 0, rowEnd: plan.rowCount))
     }
 
-    // MARK: Row/column extraction
+    // MARK: Row extraction
 
-    private static func rowsAndMode(for element: JsonElement) -> ([JsonElement], Mode) {
+    private static func rowsAndMode(for element: JsonElement) -> ([JsonElement], SchemaPlan.Mode) {
         switch element.type {
         case .array:
             let vs = element.valueArray
             if vs.isEmpty == false && vs.allSatisfy({ $0.type == .dictionary }) {
                 return (vs, .records)
             }
-            return (vs, .singleColumn)
+            return (vs, .single)
         case .dictionary:
             return ([element], .records)
         default:
-            return ([element], .singleColumn)
+            return ([element], .single)
         }
     }
 
@@ -174,27 +186,27 @@ public enum ParquetShredder {
 
     private static func inferred(of e: JsonElement) -> Inferred {
         switch e.type {
-        case .null:                 return .unknown   // contributes only nullability
-        case .boolean:              return .boolean
-        case .int:                  return .int64
-        case .double:               return .double
-        case .string, .regex:       return .string
-        case .array, .dictionary:   return .json
+        case .null:               return .unknown
+        case .boolean:            return .boolean
+        case .int:                return .int64
+        case .double:             return .double
+        case .string, .regex:     return .string
+        case .array, .dictionary: return .json
         }
     }
 
     private static func join(_ a: Inferred, _ b: Inferred) -> Inferred {
         if a == b { return a }
         switch (a, b) {
-        case (.unknown, let x), (let x, .unknown):    return x
-        case (.int64, .double), (.double, .int64):    return .double
-        default:                                      return .json  // any other mix
+        case (.unknown, let x), (let x, .unknown): return x
+        case (.int64, .double), (.double, .int64): return .double
+        default:                                   return .json
         }
     }
 
     private static func finalize(_ t: Inferred) -> ParquetLogicalType {
         switch t {
-        case .unknown: return .string   // all-null column: type is arbitrary but must be valid
+        case .unknown: return .string
         case .boolean: return .boolean
         case .int64:   return .int64
         case .double:  return .double
@@ -203,93 +215,110 @@ public enum ParquetShredder {
         }
     }
 
-    // MARK: Records mode
+    // MARK: Pass 1 - plan (fix schema)
 
-    private static func shredRecords(rows: [JsonElement],
-                                     options: ParquetShredOptions) -> ParquetTable {
-        let rowCount = rows.count
+    static func plan(_ element: JsonElement, options: ParquetShredOptions) -> SchemaPlan {
+        let (rows, mode) = rowsAndMode(for: element)
+        let total = rows.count
 
-        // Pass 1: discover columns (in first-appearance order) and infer types.
-        var order: [HalfHitch] = []            // column name by index, first-appearance order
-        var index: [HalfHitch: Int] = [:]      // name -> column index
-        var types: [Inferred] = []
+        switch mode {
+        case .records:
+            var order: [HalfHitch] = []
+            var index: [HalfHitch: Int] = [:]
+            var types: [Inferred] = []
+            var nonNull: [Int] = []
 
-        for row in rows {
-            guard row.type == .dictionary else { continue }
-            let keys = row.keyArray
-            let vals = row.valueArray
-            let n = min(keys.count, vals.count)
-            for i in 0..<n {
-                let key = keys[i]
-                let colIdx: Int
-                if let existing = index[key] {
-                    colIdx = existing
-                } else {
-                    colIdx = order.count
-                    index[key] = colIdx
-                    order.append(key)
-                    types.append(.unknown)
-                }
-                types[colIdx] = join(types[colIdx], inferred(of: vals[i]))
-            }
-        }
-
-        let columnCount = order.count
-
-        // Pass 2: materialize. Scatter each row's keys into per-column builders,
-        // then mark any column not touched by this row as null.
-        let builders = order.indices.map { ColumnBuilder(type: finalize(types[$0])) }
-        var seenEpoch = [Int](repeating: 0, count: columnCount)
-        var epoch = 0
-
-        for row in rows {
-            epoch += 1
-            if row.type == .dictionary {
+            for row in rows {
+                guard row.type == .dictionary else { continue }
                 let keys = row.keyArray
                 let vals = row.valueArray
                 let n = min(keys.count, vals.count)
+                var seen = Set<Int>()
                 for i in 0..<n {
-                    guard let c = index[keys[i]] else { continue }
-                    // First-occurrence-wins for duplicate keys in a single row, so
-                    // that a malformed object can't misalign this column vs the rest.
-                    guard seenEpoch[c] != epoch else { continue }
-                    seenEpoch[c] = epoch
-                    builders[c].append(vals[i])   // handles JSON-null -> appendNull internally
+                    let key = keys[i]
+                    let c: Int
+                    if let existing = index[key] {
+                        c = existing
+                    } else {
+                        c = order.count
+                        index[key] = c
+                        order.append(key)
+                        types.append(.unknown)
+                        nonNull.append(0)
+                    }
+                    if seen.contains(c) { continue }   // ignore duplicate keys in a row
+                    seen.insert(c)
+                    let v = vals[i]
+                    if v.type != .null {
+                        types[c] = join(types[c], inferred(of: v))
+                        nonNull[c] += 1
+                    }
                 }
             }
-            for c in 0..<columnCount where seenEpoch[c] != epoch {
-                builders[c].appendNull()
-            }
-        }
 
-        let columns = order.indices.map { c in
-            builders[c].finish(name: order[c].hitch(), rowCount: rowCount)
+            var fields: [ParquetField] = []
+            fields.reserveCapacity(order.count)
+            for c in 0..<order.count {
+                fields.append(ParquetField(name: order[c].hitch(),
+                                           type: finalize(types[c]),
+                                           nullable: nonNull[c] != total))
+            }
+            return SchemaPlan(mode: .records, rows: rows, fields: fields, order: order, index: index)
+
+        case .single:
+            var t: Inferred = .unknown
+            var nonNull = 0
+            for v in rows where v.type != .null {
+                t = join(t, inferred(of: v))
+                nonNull += 1
+            }
+            let field = ParquetField(name: Hitch(hitch: options.scalarColumnName),
+                                     type: finalize(t),
+                                     nullable: nonNull != total)
+            return SchemaPlan(mode: .single, rows: rows, fields: [field], order: [], index: [:])
         }
-        return ParquetTable(rowCount: rowCount, columns: columns)
     }
 
-    // MARK: Single-column mode
+    // MARK: Pass 2 - materialize a row range
 
-    private static func shredSingleColumn(rows: [JsonElement],
-                                          options: ParquetShredOptions) -> ParquetTable {
-        let rowCount = rows.count
+    static func materialize(_ plan: SchemaPlan, rowStart: Int, rowEnd: Int) -> [ParquetColumn] {
+        let fields = plan.fields
+        let builders = fields.map { ColumnBuilder(type: $0.type) }
+        let rows = plan.rows
 
-        var t: Inferred = .unknown
-        for v in rows { t = join(t, inferred(of: v)) }
+        switch plan.mode {
+        case .records:
+            let index = plan.index
+            var seenEpoch = [Int](repeating: 0, count: fields.count)
+            var epoch = 0
+            for r in rowStart..<rowEnd {
+                let row = rows[r]
+                epoch += 1
+                if row.type == .dictionary {
+                    let keys = row.keyArray
+                    let vals = row.valueArray
+                    let n = min(keys.count, vals.count)
+                    for i in 0..<n {
+                        guard let c = index[keys[i]] else { continue }
+                        guard seenEpoch[c] != epoch else { continue }
+                        seenEpoch[c] = epoch
+                        builders[c].append(vals[i])
+                    }
+                }
+                for c in 0..<fields.count where seenEpoch[c] != epoch {
+                    builders[c].appendNull()
+                }
+            }
+        case .single:
+            for r in rowStart..<rowEnd { builders[0].append(rows[r]) }
+        }
 
-        let builder = ColumnBuilder(type: finalize(t))
-        for v in rows { builder.append(v) }
-
-        let column = builder.finish(name: Hitch(hitch: options.scalarColumnName), rowCount: rowCount)
-        return ParquetTable(rowCount: rowCount, columns: [column])
+        return (0..<fields.count).map { builders[$0].finish(field: fields[$0]) }
     }
 }
 
 // MARK: - Column builder
 
-/// Accumulates one column's present values + definition levels during pass 2.
-/// A reference type so it can be mutated in place inside `map`/loops without
-/// index juggling.
 private final class ColumnBuilder {
     let type: ParquetLogicalType
 
@@ -298,21 +327,12 @@ private final class ColumnBuilder {
     private var doubles: [Double] = []
     private var bytes: [Hitch] = []
     private var defLevels: [UInt8] = []
-    private var nonNull = 0
 
-    init(type: ParquetLogicalType) {
-        self.type = type
-    }
+    init(type: ParquetLogicalType) { self.type = type }
 
-    /// Append a JSON value. A JSON `null` (or absence, via `appendNull`) is
-    /// treated as a SQL null regardless of the column's type.
     func append(_ e: JsonElement) {
-        if e.type == .null {
-            appendNull()
-            return
-        }
+        if e.type == .null { appendNull(); return }
         defLevels.append(1)
-        nonNull += 1
         switch type {
         case .boolean: bools.append(e.valueBool)
         case .int64:   ints.append(Int64(e.valueInt))
@@ -322,14 +342,9 @@ private final class ColumnBuilder {
         }
     }
 
-    func appendNull() {
-        defLevels.append(0)
-    }
+    func appendNull() { defLevels.append(0) }
 
-    func finish(name: Hitch, rowCount: Int) -> ParquetColumn {
-        // A column is nullable iff not every row carried a present, non-null value.
-        let nullable = nonNull != rowCount
-
+    func finish(field: ParquetField) -> ParquetColumn {
         let storage: ParquetColumnStorage
         switch type {
         case .boolean:        storage = .boolean(bools)
@@ -337,10 +352,8 @@ private final class ColumnBuilder {
         case .double:         storage = .double(doubles)
         case .string, .json:  storage = .bytes(bytes)
         }
-
-        let field = ParquetField(name: name, type: type, nullable: nullable)
         return ParquetColumn(field: field,
-                             definitionLevels: nullable ? defLevels : [],
+                             definitionLevels: field.nullable ? defLevels : [],
                              storage: storage)
     }
 }
