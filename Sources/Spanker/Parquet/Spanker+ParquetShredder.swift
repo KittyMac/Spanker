@@ -279,6 +279,28 @@ public enum ParquetShredder {
         }
     }
 
+    // MARK: Plan from an externally supplied (e.g. Codable-derived) schema
+
+    /// Build a plan that uses `fields` verbatim as the schema instead of
+    /// inferring from data. Column order and index come from `fields`; only
+    /// keys named in `fields` are materialized (others in the data are ignored).
+    static func plan(fields: [ParquetField], for element: JsonElement,
+                     options: ParquetShredOptions) -> SchemaPlan {
+        let (rows, mode) = rowsAndMode(for: element)
+        if fields.count == 1 && mode == .single {
+            return SchemaPlan(mode: .single, rows: rows, fields: fields, order: [], index: [:])
+        }
+        var order: [HalfHitch] = []
+        var index: [HalfHitch: Int] = [:]
+        order.reserveCapacity(fields.count)
+        for (i, f) in fields.enumerated() {
+            let key = f.name.halfhitch()
+            order.append(key)
+            index[key] = i
+        }
+        return SchemaPlan(mode: .records, rows: rows, fields: fields, order: order, index: index)
+    }
+
     // MARK: Pass 2 - materialize a row range
 
     static func materialize(_ plan: SchemaPlan, rowStart: Int, rowEnd: Int) -> [ParquetColumn] {
@@ -355,6 +377,67 @@ private final class ColumnBuilder {
         return ParquetColumn(field: field,
                              definitionLevels: field.nullable ? defLevels : [],
                              storage: storage)
+    }
+}
+
+// MARK: - Row accumulator (incremental / streaming)
+
+/// Buffers rows one (or a batch) at a time against a FIXED schema, then hands
+/// off a row group's worth of columns on demand. Values are copied on append,
+/// so callers may append from short-lived `JsonElement`s (e.g. inside `parsed`).
+final class RowAccumulator {
+    let fields: [ParquetField]
+    private let singleColumn: Bool
+    private let index: [HalfHitch: Int]
+    private var builders: [ColumnBuilder]
+    private var seenEpoch: [Int]
+    private var epoch = 0
+    private(set) var rowCount = 0
+
+    init(fields: [ParquetField], singleColumn: Bool) {
+        self.fields = fields
+        self.singleColumn = singleColumn
+        var idx: [HalfHitch: Int] = [:]
+        for (i, f) in fields.enumerated() { idx[f.name.halfhitch()] = i }
+        self.index = idx
+        self.builders = fields.map { ColumnBuilder(type: $0.type) }
+        self.seenEpoch = [Int](repeating: 0, count: fields.count)
+    }
+
+    /// Append one row. In records mode `element` is a JSON object; in single
+    /// mode it is the scalar value.
+    func append(_ element: JsonElement) {
+        if singleColumn {
+            builders[0].append(element)
+        } else {
+            epoch += 1
+            if element.type == .dictionary {
+                let keys = element.keyArray
+                let vals = element.valueArray
+                let n = min(keys.count, vals.count)
+                for i in 0..<n {
+                    guard let c = index[keys[i]] else { continue }
+                    guard seenEpoch[c] != epoch else { continue }
+                    seenEpoch[c] = epoch
+                    builders[c].append(vals[i])
+                }
+            }
+            for c in 0..<fields.count where seenEpoch[c] != epoch {
+                builders[c].appendNull()
+            }
+        }
+        rowCount += 1
+    }
+
+    /// Finish the buffered rows into columns and reset for the next group.
+    func takeRowGroup() -> (columns: [ParquetColumn], rowCount: Int) {
+        let columns = (0..<fields.count).map { builders[$0].finish(field: fields[$0]) }
+        let rc = rowCount
+        builders = fields.map { ColumnBuilder(type: $0.type) }
+        seenEpoch = [Int](repeating: 0, count: fields.count)
+        epoch = 0
+        rowCount = 0
+        return (columns, rc)
     }
 }
 
