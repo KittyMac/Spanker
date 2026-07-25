@@ -43,6 +43,8 @@ class ParquetShredderTests: TestsBase {
 
         // REQUIRED columns carry no definition levels.
         XCTAssertEqual(column(t, "a")?.definitionLevels, [])
+        
+        print(t.description)
     }
 
     // MARK: - Nullability: missing key and explicit null

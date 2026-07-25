@@ -20,21 +20,41 @@ import Hitch
 // round-tripped through Apache Arrow (pyarrow) across every column type and
 // nullability case before this Swift port was written.
 
+/// Page compression codec.
+public enum ParquetCompression {
+    case uncompressed
+    case snappy
+
+    var codecId: Int {   // Parquet CompressionCodec enum value
+        switch self {
+        case .uncompressed: return 0
+        case .snappy:       return 1
+        }
+    }
+}
+
 public extension ParquetTable {
     /// Serialize this table to Parquet file bytes.
-    func exportParquet() -> Data {
+    ///
+    /// - Parameter compression: page codec. Defaults to `.snappy`, the de-facto
+    ///   Parquet default; pass `.uncompressed` to disable.
+    func exportParquet(compression: ParquetCompression = .snappy) -> Data {
         let out = ByteBuffer(reserving: 1024)
         out.magic()                                   // "PAR1" header
 
         var chunks: [ChunkInfo] = []
         for column in columns {
             let offset = out.count
-            let page = ParquetEncoder.buildDataPage(column: column, rowCount: rowCount)
-            out.append(page)
+            let page = ParquetEncoder.buildDataPage(column: column,
+                                                    rowCount: rowCount,
+                                                    compression: compression)
+            out.append(page.bytes)
             chunks.append(ChunkInfo(offset: offset,
-                                    size: page.count,
+                                    uncompressedSize: page.uncompressedSize,
+                                    compressedSize: page.compressedSize,
                                     physical: ParquetEncoder.physicalType(column.field.type),
-                                    name: column.field.name))
+                                    name: column.field.name,
+                                    codec: compression.codecId))
         }
 
         let meta = ByteBuffer(reserving: 512)
@@ -50,8 +70,9 @@ public extension ParquetTable {
 
 public extension JsonElement {
     /// Shred and serialize this element to Parquet file bytes in one step.
-    func toParquet(options: ParquetShredOptions = ParquetShredOptions()) -> Data {
-        return toParquetTable(options: options).exportParquet()
+    func toParquet(options: ParquetShredOptions = ParquetShredOptions(),
+                   compression: ParquetCompression = .snappy) -> Data {
+        return toParquetTable(options: options).exportParquet(compression: compression)
     }
 }
 
@@ -59,9 +80,19 @@ public extension JsonElement {
 
 private struct ChunkInfo {
     let offset: Int
-    let size: Int
+    let uncompressedSize: Int   // page header + uncompressed body
+    let compressedSize: Int     // page header + compressed body (bytes on disk)
     let physical: Int
     let name: Hitch
+    let codec: Int
+}
+
+// A built column chunk: the bytes actually written, plus the size accounting
+// the metadata needs (both include the uncompressed PageHeader).
+private struct BuiltPage {
+    let bytes: ByteBuffer
+    let uncompressedSize: Int
+    let compressedSize: Int
 }
 
 // Thrift compact protocol type nibbles.
@@ -101,19 +132,31 @@ private enum ParquetEncoder {
 
     // MARK: Data page (v1)
 
-    static func buildDataPage(column: ParquetColumn, rowCount: Int) -> ByteBuffer {
+    static func buildDataPage(column: ParquetColumn,
+                              rowCount: Int,
+                              compression: ParquetCompression) -> BuiltPage {
+        // Uncompressed page body: definition levels (if nullable) followed by
+        // PLAIN values. In a DATA_PAGE v1 the whole body is compressed as one
+        // block; the PageHeader itself is never compressed.
         let pageData = ByteBuffer(reserving: 256)
         if column.field.nullable {
             appendDefLevels(column.definitionLevels, into: pageData)
         }
         appendPlain(column.storage, into: pageData)
 
-        let page = ByteBuffer(reserving: pageData.count + 32)
+        let uncompressedBody = pageData.count
+        let body: [UInt8]
+        switch compression {
+        case .uncompressed: body = pageData.bytes
+        case .snappy:       body = Snappy.compress(pageData.bytes)
+        }
+
+        let page = ByteBuffer(reserving: body.count + 32)
         let tw = ThriftWriter(page)
         tw.structBegin()                                  // PageHeader
         tw.field(1, K_I32); tw.int(0)                     // type = DATA_PAGE
-        tw.field(2, K_I32); tw.int(pageData.count)        // uncompressed_page_size
-        tw.field(3, K_I32); tw.int(pageData.count)        // compressed_page_size (== uncompressed)
+        tw.field(2, K_I32); tw.int(uncompressedBody)      // uncompressed_page_size
+        tw.field(3, K_I32); tw.int(body.count)            // compressed_page_size
         tw.field(5, K_STRUCT); tw.structBegin()           // DataPageHeader
         tw.field(1, K_I32); tw.int(rowCount)              // num_values (rows, incl. nulls)
         tw.field(2, K_I32); tw.int(0)                     // encoding = PLAIN
@@ -122,8 +165,12 @@ private enum ParquetEncoder {
         tw.structEnd()
         tw.structEnd()
 
-        page.append(pageData)
-        return page
+        let headerLen = page.count
+        page.append(bytes: body)
+
+        return BuiltPage(bytes: page,
+                         uncompressedSize: headerLen + uncompressedBody,
+                         compressedSize: headerLen + body.count)
     }
 
     // PLAIN encoding of the present (non-null) values.
@@ -191,8 +238,8 @@ private enum ParquetEncoder {
         tw.structBegin()                                          // RowGroup
         tw.field(1, K_LIST); tw.listBegin(chunks.count, K_STRUCT) // columns
         for ch in chunks { columnChunk(tw, ch, rowCount: table.rowCount) }
-        let totalSize = chunks.reduce(0) { $0 + $1.size }
-        tw.field(2, K_I64); tw.int(totalSize)                     // total_byte_size
+        let totalSize = chunks.reduce(0) { $0 + $1.uncompressedSize }
+        tw.field(2, K_I64); tw.int(totalSize)                     // total_byte_size (uncompressed)
         tw.field(3, K_I64); tw.int(table.rowCount)                // num_rows
         tw.structEnd()
         tw.field(6, K_BINARY); tw.binary(Hitch(string: "Spanker"))  // created_by
@@ -221,10 +268,10 @@ private enum ParquetEncoder {
         tw.field(1, K_I32); tw.int(ch.physical)                   // type
         tw.field(2, K_LIST); tw.listBegin(2, K_I32); tw.int(3); tw.int(0)  // encodings = [RLE, PLAIN]
         tw.field(3, K_LIST); tw.listBegin(1, K_BINARY); tw.binary(ch.name) // path_in_schema
-        tw.field(4, K_I32); tw.int(0)                             // codec = UNCOMPRESSED
+        tw.field(4, K_I32); tw.int(ch.codec)                      // codec
         tw.field(5, K_I64); tw.int(rowCount)                      // num_values
-        tw.field(6, K_I64); tw.int(ch.size)                       // total_uncompressed_size
-        tw.field(7, K_I64); tw.int(ch.size)                       // total_compressed_size
+        tw.field(6, K_I64); tw.int(ch.uncompressedSize)           // total_uncompressed_size
+        tw.field(7, K_I64); tw.int(ch.compressedSize)             // total_compressed_size
         tw.field(9, K_I64); tw.int(ch.offset)                     // data_page_offset
         tw.structEnd()
         tw.structEnd()
@@ -246,6 +293,8 @@ private final class ByteBuffer {
     func byte(_ b: UInt8) { bytes.append(b) }
 
     func append(_ other: ByteBuffer) { bytes.append(contentsOf: other.bytes) }
+
+    func append(bytes raw: [UInt8]) { bytes.append(contentsOf: raw) }
 
     func append(hitchBytes h: Hitch) { bytes.append(contentsOf: h.dataCopy()) }
 
@@ -323,5 +372,110 @@ private final class ThriftWriter {
 
     private func zigzag(_ n: Int64) -> UInt64 {
         return UInt64(bitPattern: (n &<< 1) ^ (n >> 63))
+    }
+}
+
+// MARK: - Snappy (raw block format)
+
+// Snappy block compressor as used by Parquet: a varint uncompressed-length
+// preamble followed by literal/copy elements (no stream framing or CRC).
+// Greedy LZ77 keyed on exact 4-byte matches; emits valid, decent output rather
+// than maximally optimal. Validated by decompression through Apache Arrow.
+private enum Snappy {
+
+    static func compress(_ input: [UInt8]) -> [UInt8] {
+        var out = [UInt8]()
+        out.reserveCapacity(input.count / 2 + 16)
+        appendVarint(UInt64(input.count), &out)
+
+        let n = input.count
+        if n == 0 { return out }
+
+        var table = [UInt32: Int](minimumCapacity: min(n, 1 << 16))
+        var i = 0
+        var nextEmit = 0
+
+        while i + 4 <= n {
+            let key = load32(input, i)
+            let cand = table[key] ?? -1
+            table[key] = i
+            if cand >= 0 && cand < i
+                && input[cand] == input[i] && input[cand + 1] == input[i + 1]
+                && input[cand + 2] == input[i + 2] && input[cand + 3] == input[i + 3] {
+                if nextEmit < i {
+                    emitLiteral(input, nextEmit, i - nextEmit, &out)
+                }
+                var mlen = 4
+                while i + mlen < n && input[cand + mlen] == input[i + mlen] { mlen += 1 }
+                emitCopy(offset: i - cand, length: mlen, &out)
+                i += mlen
+                nextEmit = i
+            } else {
+                i += 1
+            }
+        }
+        if nextEmit < n {
+            emitLiteral(input, nextEmit, n - nextEmit, &out)
+        }
+        return out
+    }
+
+    private static func load32(_ b: [UInt8], _ i: Int) -> UInt32 {
+        return UInt32(b[i]) | (UInt32(b[i + 1]) << 8)
+             | (UInt32(b[i + 2]) << 16) | (UInt32(b[i + 3]) << 24)
+    }
+
+    private static func appendVarint(_ v: UInt64, _ out: inout [UInt8]) {
+        var x = v
+        while true {
+            let b = UInt8(x & 0x7F)
+            x >>= 7
+            if x != 0 { out.append(b | 0x80) } else { out.append(b); return }
+        }
+    }
+
+    private static func emitLiteral(_ b: [UInt8], _ start: Int, _ length: Int, _ out: inout [UInt8]) {
+        let ln = length - 1
+        if ln < 60 {
+            out.append(UInt8(ln << 2))                 // tag: (ln << 2) | 00
+        } else {
+            var need = 0
+            var t = ln
+            while t > 0 { need += 1; t >>= 8 }
+            if need < 1 { need = 1 }
+            out.append(UInt8((59 + need) << 2))        // 60..63 in the length slot
+            for k in 0..<need { out.append(UInt8((ln >> (8 * k)) & 0xFF)) }
+        }
+        out.append(contentsOf: b[start..<(start + length)])
+    }
+
+    private static func emitCopy(offset: Int, length: Int, _ out: inout [UInt8]) {
+        var len = length
+        while len > 0 {
+            let chunk = len >= 64 ? 64 : len
+            emitCopyChunk(offset: offset, length: chunk, &out)
+            len -= chunk
+        }
+    }
+
+    private static func emitCopyChunk(offset: Int, length: Int, _ out: inout [UInt8]) {
+        if length >= 4 && length <= 11 && offset < 2048 {
+            // 1-byte-offset copy: 01 | ((len-4)<<2) | ((offset>>8)<<5), then low 8 bits.
+            let tag = 0x01 | (((length - 4) & 0x7) << 2) | ((offset >> 8) << 5)
+            out.append(UInt8(tag & 0xFF))
+            out.append(UInt8(offset & 0xFF))
+        } else if offset < 65536 {
+            // 2-byte-offset copy: 10 | ((len-1)<<2), then 2-byte LE offset.
+            out.append(UInt8(0x02 | (((length - 1) & 0x3F) << 2)))
+            out.append(UInt8(offset & 0xFF))
+            out.append(UInt8((offset >> 8) & 0xFF))
+        } else {
+            // 4-byte-offset copy: 11 | ((len-1)<<2), then 4-byte LE offset.
+            out.append(UInt8(0x03 | (((length - 1) & 0x3F) << 2)))
+            out.append(UInt8(offset & 0xFF))
+            out.append(UInt8((offset >> 8) & 0xFF))
+            out.append(UInt8((offset >> 16) & 0xFF))
+            out.append(UInt8((offset >> 24) & 0xFF))
+        }
     }
 }
