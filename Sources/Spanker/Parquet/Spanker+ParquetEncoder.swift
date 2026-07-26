@@ -319,12 +319,12 @@ final class ByteBuffer {
 
 // MARK: - Thrift compact protocol writer
 
-private let K_STOP: UInt8   = 0x00
-private let K_I32: UInt8    = 5
-private let K_I64: UInt8    = 6
-private let K_BINARY: UInt8 = 8
-private let K_LIST: UInt8   = 9
-private let K_STRUCT: UInt8 = 12
+let K_STOP: UInt8   = 0x00
+let K_I32: UInt8    = 5
+let K_I64: UInt8    = 6
+let K_BINARY: UInt8 = 8
+let K_LIST: UInt8   = 9
+let K_STRUCT: UInt8 = 12
 
 final class ThriftWriter {
     private let b: ByteBuffer
@@ -368,7 +368,7 @@ final class ThriftWriter {
 
 // MARK: - Snappy (raw block format)
 
-private enum Snappy {
+enum Snappy {
 
     static func compress(_ input: [UInt8]) -> [UInt8] {
         var out = [UInt8]()

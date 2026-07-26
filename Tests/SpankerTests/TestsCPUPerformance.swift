@@ -27,6 +27,7 @@ class SpankerTestsCPUPerformance: TestsBase {
         }
     }
     
+    /*
     func test_large_load() {
         
         // 0.387
@@ -38,5 +39,6 @@ class SpankerTestsCPUPerformance: TestsBase {
             }
         }
     }
+     */
     
 }

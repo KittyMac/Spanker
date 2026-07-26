@@ -813,6 +813,14 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     internal var valueArray: [JsonElement] = []
     
     internal var keyArray: [HalfHitch] = []
+    
+    public func allValues() -> [JsonElement] {
+        return valueArray
+    }
+    
+    public func allKeys() -> [HalfHitch] {
+        return keyArray
+    }
 
 
     internal var valueBool: Bool {

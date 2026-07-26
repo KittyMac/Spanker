@@ -429,3 +429,234 @@ public final class ParquetStreamWriter {
         writer.finish()
     }
 }
+
+// MARK: - Native nested schema from a Codable type
+//
+// Extends the flat probe to build a real nested ParquetSchemaNode tree: nested
+// structs become GROUP nodes, arrays become LIST nodes, and recursive types
+// (e.g. `children: [Person]`) are expanded up to `maxRecursionDepth` levels and
+// then omitted. A field's shape is discovered by running its `init(from:)` and
+// observing which container it requests. Enums, dates, dictionaries, and other
+// types that decode from a single value fall back to a JSON leaf.
+
+fileprivate struct RecordField {
+    let name: String
+    let optional: Bool
+    let primitive: ParquetLogicalType?   // set for primitive leaves
+    let complexType: Decodable.Type?     // set for arrays / structs / other
+}
+
+fileprivate enum Shape {
+    case record([RecordField])
+    case array(Decodable.Type)
+    case scalar
+}
+
+fileprivate final class ShapeBox {
+    enum Kind { case record, array, scalar }
+    var kind: Kind = .scalar
+    var fields: [RecordField] = []
+    var elementType: Decodable.Type?
+
+    var shape: Shape {
+        switch kind {
+        case .record: return .record(fields)
+        case .array:  return elementType.map { .array($0) } ?? .scalar
+        case .scalar: return .scalar
+        }
+    }
+}
+
+fileprivate func introspectShape(_ type: Decodable.Type) -> Shape {
+    let box = ShapeBox()
+    _ = try? type.init(from: ShapeProbe(box: box))
+    return box.shape
+}
+
+fileprivate final class ShapeProbe: Decoder {
+    var codingPath: [CodingKey] = []
+    var userInfo: [CodingUserInfoKey: Any] = [:]
+    let box: ShapeBox
+    init(box: ShapeBox) { self.box = box }
+
+    func container<Key: CodingKey>(keyedBy type: Key.Type) -> KeyedDecodingContainer<Key> {
+        box.kind = .record
+        return KeyedDecodingContainer(RecordKeyed<Key>(box: box))
+    }
+    func unkeyedContainer() -> UnkeyedDecodingContainer {
+        box.kind = .array
+        return ArrayShapeUnkeyed(box: box)
+    }
+    func singleValueContainer() -> SingleValueDecodingContainer {
+        box.kind = .scalar
+        return DummySingle(depth: 1)
+    }
+}
+
+// Records each field's name, primitive-or-complex type, and optionality.
+fileprivate struct RecordKeyed<Key: CodingKey>: KeyedDecodingContainerProtocol {
+    let box: ShapeBox
+    var codingPath: [CodingKey] = []
+    var allKeys: [Key] = []
+    func contains(_ key: Key) -> Bool { true }
+    func decodeNil(forKey key: Key) throws -> Bool { false }
+
+    private func prim(_ key: Key, _ t: ParquetLogicalType, _ opt: Bool) {
+        box.fields.append(RecordField(name: key.stringValue, optional: opt, primitive: t, complexType: nil))
+    }
+    private func cplx(_ key: Key, _ t: Decodable.Type, _ opt: Bool) {
+        box.fields.append(RecordField(name: key.stringValue, optional: opt, primitive: nil, complexType: t))
+    }
+
+    func decode(_ t: Bool.Type,   forKey k: Key) throws -> Bool   { prim(k, .boolean, false); return false }
+    func decode(_ t: String.Type, forKey k: Key) throws -> String { prim(k, .string,  false); return "" }
+    func decode(_ t: Double.Type, forKey k: Key) throws -> Double { prim(k, .double,  false); return 0 }
+    func decode(_ t: Float.Type,  forKey k: Key) throws -> Float  { prim(k, .double,  false); return 0 }
+    func decode(_ t: Int.Type,    forKey k: Key) throws -> Int    { prim(k, .int64,   false); return 0 }
+    func decode(_ t: Int8.Type,   forKey k: Key) throws -> Int8   { prim(k, .int64,   false); return 0 }
+    func decode(_ t: Int16.Type,  forKey k: Key) throws -> Int16  { prim(k, .int64,   false); return 0 }
+    func decode(_ t: Int32.Type,  forKey k: Key) throws -> Int32  { prim(k, .int64,   false); return 0 }
+    func decode(_ t: Int64.Type,  forKey k: Key) throws -> Int64  { prim(k, .int64,   false); return 0 }
+    func decode(_ t: UInt.Type,   forKey k: Key) throws -> UInt   { prim(k, .int64,   false); return 0 }
+    func decode(_ t: UInt8.Type,  forKey k: Key) throws -> UInt8  { prim(k, .int64,   false); return 0 }
+    func decode(_ t: UInt16.Type, forKey k: Key) throws -> UInt16 { prim(k, .int64,   false); return 0 }
+    func decode(_ t: UInt32.Type, forKey k: Key) throws -> UInt32 { prim(k, .int64,   false); return 0 }
+    func decode(_ t: UInt64.Type, forKey k: Key) throws -> UInt64 { prim(k, .int64,   false); return 0 }
+    func decode<U: Decodable>(_ t: U.Type, forKey k: Key) throws -> U {
+        cplx(k, U.self, false); return try makeDummy(U.self, key: k.stringValue, depth: 1)
+    }
+
+    func decodeIfPresent(_ t: Bool.Type,   forKey k: Key) throws -> Bool?   { prim(k, .boolean, true); return nil }
+    func decodeIfPresent(_ t: String.Type, forKey k: Key) throws -> String? { prim(k, .string,  true); return nil }
+    func decodeIfPresent(_ t: Double.Type, forKey k: Key) throws -> Double? { prim(k, .double,  true); return nil }
+    func decodeIfPresent(_ t: Float.Type,  forKey k: Key) throws -> Float?  { prim(k, .double,  true); return nil }
+    func decodeIfPresent(_ t: Int.Type,    forKey k: Key) throws -> Int?    { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: Int8.Type,   forKey k: Key) throws -> Int8?   { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: Int16.Type,  forKey k: Key) throws -> Int16?  { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: Int32.Type,  forKey k: Key) throws -> Int32?  { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: Int64.Type,  forKey k: Key) throws -> Int64?  { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: UInt.Type,   forKey k: Key) throws -> UInt?   { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: UInt8.Type,  forKey k: Key) throws -> UInt8?  { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: UInt16.Type, forKey k: Key) throws -> UInt16? { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: UInt32.Type, forKey k: Key) throws -> UInt32? { prim(k, .int64,   true); return nil }
+    func decodeIfPresent(_ t: UInt64.Type, forKey k: Key) throws -> UInt64? { prim(k, .int64,   true); return nil }
+    func decodeIfPresent<U: Decodable>(_ t: U.Type, forKey k: Key) throws -> U? {
+        cplx(k, U.self, true); return nil
+    }
+
+    func nestedContainer<NK: CodingKey>(keyedBy type: NK.Type, forKey key: Key) throws -> KeyedDecodingContainer<NK> {
+        KeyedDecodingContainer(DummyKeyed<NK>(depth: 1))
+    }
+    func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer { EmptyUnkeyed() }
+    func superDecoder() throws -> Decoder { DummyDecoder(depth: 1) }
+    func superDecoder(forKey key: Key) throws -> Decoder { DummyDecoder(depth: 1) }
+}
+
+// Captures an array's element type from the single element it decodes.
+fileprivate struct ArrayShapeUnkeyed: UnkeyedDecodingContainer {
+    let box: ShapeBox
+    var codingPath: [CodingKey] = []
+    var count: Int? { nil }
+    var isAtEnd: Bool { box.elementType != nil }
+    var currentIndex: Int { box.elementType == nil ? 0 : 1 }
+
+    mutating func decodeNil() throws -> Bool { false }
+    mutating func decode(_ t: Bool.Type)   throws -> Bool   { box.elementType = Bool.self;   return false }
+    mutating func decode(_ t: String.Type) throws -> String { box.elementType = String.self; return "" }
+    mutating func decode(_ t: Double.Type) throws -> Double { box.elementType = Double.self; return 0 }
+    mutating func decode(_ t: Float.Type)  throws -> Float  { box.elementType = Float.self;  return 0 }
+    mutating func decode(_ t: Int.Type)    throws -> Int    { box.elementType = Int.self;    return 0 }
+    mutating func decode(_ t: Int8.Type)   throws -> Int8   { box.elementType = Int8.self;   return 0 }
+    mutating func decode(_ t: Int16.Type)  throws -> Int16  { box.elementType = Int16.self;  return 0 }
+    mutating func decode(_ t: Int32.Type)  throws -> Int32  { box.elementType = Int32.self;  return 0 }
+    mutating func decode(_ t: Int64.Type)  throws -> Int64  { box.elementType = Int64.self;  return 0 }
+    mutating func decode(_ t: UInt.Type)   throws -> UInt   { box.elementType = UInt.self;   return 0 }
+    mutating func decode(_ t: UInt8.Type)  throws -> UInt8  { box.elementType = UInt8.self;  return 0 }
+    mutating func decode(_ t: UInt16.Type) throws -> UInt16 { box.elementType = UInt16.self; return 0 }
+    mutating func decode(_ t: UInt32.Type) throws -> UInt32 { box.elementType = UInt32.self; return 0 }
+    mutating func decode(_ t: UInt64.Type) throws -> UInt64 { box.elementType = UInt64.self; return 0 }
+    mutating func decode<E: Decodable>(_ t: E.Type) throws -> E {
+        box.elementType = E.self
+        return try makeDummy(E.self, key: "element", depth: 1)
+    }
+    mutating func nestedContainer<NK: CodingKey>(keyedBy type: NK.Type) throws -> KeyedDecodingContainer<NK> {
+        KeyedDecodingContainer(DummyKeyed<NK>(depth: 1))
+    }
+    mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer { EmptyUnkeyed() }
+    mutating func superDecoder() throws -> Decoder { DummyDecoder(depth: 1) }
+}
+
+// MARK: - Tree building
+
+fileprivate func buildField(_ f: RecordField, stack: [ObjectIdentifier], cap: Int) -> ParquetSchemaNode? {
+    let rep: ParquetRepetition = f.optional ? .optional : .required
+    if let prim = f.primitive {
+        return .leaf(Hitch(string: f.name), prim, rep)
+    }
+    guard let ct = f.complexType else { return .leaf(Hitch(string: f.name), .json, rep) }
+    switch introspectShape(ct) {
+    case .scalar:
+        return .leaf(Hitch(string: f.name), logicalType(for: ct), rep)
+    case .array(let element):
+        guard let elem = buildElement(element, stack: stack, cap: cap) else { return nil }
+        return .list(Hitch(string: f.name), rep, element: elem)
+    case .record(let fields):
+        let id = ObjectIdentifier(ct)
+        if stack.filter({ $0 == id }).count > cap { return nil }        // recursion cap
+        let children = fields.compactMap { buildField($0, stack: stack + [id], cap: cap) }
+        return children.isEmpty
+            ? .leaf(Hitch(string: f.name), .json, rep)
+            : .group(Hitch(string: f.name), rep, children: children)
+    }
+}
+
+fileprivate func buildElement(_ type: Decodable.Type, stack: [ObjectIdentifier], cap: Int) -> ParquetSchemaNode? {
+    switch introspectShape(type) {
+    case .scalar:
+        return .leaf("element", logicalType(for: type), .optional)
+    case .array(let inner):
+        guard let innerNode = buildElement(inner, stack: stack, cap: cap) else { return nil }
+        return .list("element", .optional, element: innerNode)
+    case .record(let fields):
+        let id = ObjectIdentifier(type)
+        if stack.filter({ $0 == id }).count > cap { return nil }
+        let children = fields.compactMap { buildField($0, stack: stack + [id], cap: cap) }
+        return children.isEmpty
+            ? .leaf("element", .json, .optional)
+            : .group("element", .optional, children: children)
+    }
+}
+
+public extension ParquetCodableSchema {
+    /// Derive a native nested Parquet schema tree from a Decodable row type.
+    /// Nested structs become groups, arrays become lists, and recursive types
+    /// expand up to `maxRecursionDepth` levels before being omitted.
+    static func nestedColumns<T: Decodable>(for type: T.Type,
+                                            maxRecursionDepth: Int = 3) -> [ParquetSchemaNode] {
+        let cap = max(1, maxRecursionDepth)
+        switch introspectShape(T.self) {
+        case .record(let fields):
+            let id = ObjectIdentifier(T.self)
+            return fields.compactMap { buildField($0, stack: [id], cap: cap) }
+        case .array(let element):
+            if case .record(let fields) = introspectShape(element) {
+                let id = ObjectIdentifier(element)
+                return fields.compactMap { buildField($0, stack: [id], cap: cap) }
+            }
+            return [.leaf("value", logicalType(for: element), .optional)]
+        case .scalar:
+            return [.leaf("value", logicalType(for: T.self), .required)]
+        }
+    }
+}
+
+public extension JsonElement {
+    /// Derive a native nested schema from `type` and serialize this element to
+    /// Parquet (structs -> groups, arrays -> lists, recursion depth-capped).
+    func toParquet<T: Decodable>(codable type: T.Type,
+                                 maxRecursionDepth: Int = 3,
+                                 compression: ParquetCompression = .snappy) -> Data {
+        let schema = ParquetCodableSchema.nestedColumns(for: type, maxRecursionDepth: maxRecursionDepth)
+        return toParquet(schema: schema, compression: compression)
+    }
+}

@@ -115,7 +115,7 @@ class ParquetCodableTests: TestsBase {
                 if let element = element { stream.append(element) }
             }
         }
-        stream.finish()
+        stream.finish()      // flushes the final partial row group + footer
         sink.close()
 
         XCTAssertEqual(stream.schema.map { $0.name.toString() },
@@ -126,7 +126,88 @@ class ParquetCodableTests: TestsBase {
         XCTAssertGreaterThan(b.count, 12)
         XCTAssertEqual(Array(b.prefix(4)), [0x50, 0x41, 0x52, 0x31])
         XCTAssertEqual(Array(b.suffix(4)), [0x50, 0x41, 0x52, 0x31])
+    }
 
+    // Derive a native nested schema tree from Person.self with recursion capped
+    // at 2 levels. name/age are required, occupation nullable, children a
+    // required list; the second children level omits its own children (cap).
+    func test_nested_codable_person_schema() throws {
+        let cols = ParquetCodableSchema.nestedColumns(for: Person.self, maxRecursionDepth: 2)
+
+        XCTAssertEqual(cols.map { $0.name.toString() }, ["name", "age", "occupation", "children"])
+        XCTAssertEqual(cols[0].kind, .leaf)
+        XCTAssertEqual(cols[0].type, .string)
+        XCTAssertEqual(cols[0].repetition, .required)
+        XCTAssertEqual(cols[1].type, .int64)
+        XCTAssertEqual(cols[1].repetition, .required)
+        XCTAssertEqual(cols[2].type, .string)
+        XCTAssertEqual(cols[2].repetition, .optional)   // occupation: String?
+
+        let children = cols[3]
+        XCTAssertEqual(children.kind, .list)
+        XCTAssertEqual(children.repetition, .required)   // children: [Person] (non-optional)
+
+        let level1 = try XCTUnwrap(children.element)
+        XCTAssertEqual(level1.kind, .group)
+        XCTAssertEqual(level1.children.map { $0.name.toString() }, ["name", "age", "occupation", "children"])
+
+        let level2 = try XCTUnwrap(level1.children[3].element)
+        XCTAssertEqual(level2.kind, .group)
+        // Cap reached: the deepest Person has no children field.
+        XCTAssertEqual(level2.children.map { $0.name.toString() }, ["name", "age", "occupation"])
+    }
+
+    func test_nested_codable_end_to_end_envelope() throws {
+        let json = #"""
+        [{"name":"alice","age":30,"occupation":"eng","children":[{"name":"bob","age":10,"children":[]}]},
+         {"name":"dan","age":40,"children":[]}]
+        """#
+        var data: Data?
+        json.parsed { data = $0?.toParquet(codable: Person.self, maxRecursionDepth: 2) }
+        let b = [UInt8](try XCTUnwrap(data))
+        XCTAssertGreaterThan(b.count, 12)
+        XCTAssertEqual(Array(b.prefix(4)), [0x50, 0x41, 0x52, 0x31])
+        XCTAssertEqual(Array(b.suffix(4)), [0x50, 0x41, 0x52, 0x31])
+    }
+
+    // Streaming, but with NATIVE nesting: children is a real list<struct>, not a
+    // JSON string. This is the nested counterpart of test_stream_people_over_time.
+    func test_nested_stream_people_over_time() throws {
+        let url = URL(fileURLWithPath: "/tmp/people_nested_stream_test.parquet")
+
+        let sink = try ParquetFileSink(url: url)
+        let stream = ParquetNestedStreamWriter(
+            sink: sink,
+            rowType: Person.self,
+            maxRecursionDepth: 2,
+            writeOptions: ParquetWriteOptions(rowsPerRowGroup: 3)   // force >1 row group
+        )
+
+        let arrivals = [
+            #"{"name":"Alice","age":30,"occupation":"engineer","children":[]}"#,
+            #"{"name":"Bob","age":25,"children":[]}"#,
+            #"{"name":"Carol","age":41,"occupation":"doctor","children":[{"name":"Dan","age":9,"children":[]}]}"#,
+            #"{"name":"Eve","age":22,"children":[]}"#,
+            #"{"name":"Frank","age":50,"occupation":"chef","children":[]}"#,
+        ]
+        for line in arrivals {
+            line.parsed { element in
+                if let element = element { stream.append(element) }
+            }
+        }
+        stream.finish()
+        sink.close()
+
+        // children is a native LIST node in the schema, not a JSON leaf.
+        let children = stream.schema.first { $0.name == "children" }!
+        XCTAssertEqual(children.kind, .list)
+
+        let b = [UInt8](try Data(contentsOf: url))
+        XCTAssertGreaterThan(b.count, 12)
+        XCTAssertEqual(Array(b.prefix(4)), [0x50, 0x41, 0x52, 0x31])
+        XCTAssertEqual(Array(b.suffix(4)), [0x50, 0x41, 0x52, 0x31])
     }
 }
+
+
 
