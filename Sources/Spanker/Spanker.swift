@@ -1168,8 +1168,24 @@ public enum Spanker {
     }
 
 
-    public static func parse(halfhitch: HalfHitch) -> JsonElement? {
+    public static func parse(hitch: Hitch?) -> JsonElement? {
+        guard let hitch = hitch else { return nil }
+        return Reader.parse(halfhitch: hitch.halfhitch())
+    }
+    
+    public static func parse(halfhitch: HalfHitch?) -> JsonElement? {
+        guard let halfhitch = halfhitch else { return nil }
         return Reader.parse(halfhitch: halfhitch)
+    }
+    
+    public static func parse(data: Data?) -> JsonElement? {
+        guard let data = data else { return nil }
+        return Reader.parse(halfhitch: HalfHitch(data: data))
+    }
+    
+    public static func parse(string: String?) -> JsonElement? {
+        guard let string = string else { return nil }
+        return Reader.parse(halfhitch: HalfHitch(string: string))
     }
 
 }
