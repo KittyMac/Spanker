@@ -44,7 +44,7 @@ public final class ParquetFileSink: ParquetSink {
     }
 
     public func close() {
-        if #available(iOS 13.0, macOS 10.15, *) {
+        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *) {
             try? handle.close()
         } else {
             handle.closeFile()
