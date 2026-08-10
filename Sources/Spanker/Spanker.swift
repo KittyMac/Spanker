@@ -1,24 +1,17 @@
 import Foundation
 import Hitch
 
-fileprivate func newDateFormatter(utc: Bool) -> DateFormatter {
+fileprivate func newDateFormatterUTC() -> DateFormatter {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
-    if utc {
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-    } else {
-        formatter.timeZone = TimeZone.current
-    }
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
     formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
     return formatter
 }
-fileprivate let iso8601DateFormatterUTC = newDateFormatter(utc: true)
-
 
 fileprivate typealias JsonAny = Any?
 fileprivate typealias JsonArray = [JsonAny]
 fileprivate typealias JsonDictionary = [String: JsonAny]
-
 
 prefix operator ^
 public prefix func ^ (value: JsonElementable?) -> JsonElement {
@@ -1204,7 +1197,7 @@ public enum Spanker {
     public static func parse(codable: Codable?) -> JsonElement? {
         guard let codable = codable else { return nil }
         let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .formatted(iso8601DateFormatterUTC)
+        encoder.dateEncodingStrategy = .formatted(newDateFormatterUTC())
         encoder.nonConformingFloatEncodingStrategy = .convertToString(positiveInfinity: "+Infinity", negativeInfinity: "-Infinity", nan: "NaN")
         guard let json = try? encoder.encode(codable) else { return nil }
         return Reader.parse(halfhitch: HalfHitch(data: json))
