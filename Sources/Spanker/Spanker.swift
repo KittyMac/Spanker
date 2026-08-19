@@ -1121,7 +1121,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             for idx in 0..<keyArray.count {
                 nextLine(offset: 1)
                 count += 3
-                count += keyArray[idx].count
+                count += keyArray[idx].count * 2
                 if pretty {
                     count += 1
                 }
