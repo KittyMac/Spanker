@@ -1010,31 +1010,18 @@ public final class JsonElement: CustomStringConvertible, Equatable {
             guard pretty else { return }
             hitch.append(.newLine)
             for _ in 0..<(level+offset) {
-                hitch.append(.space)
-                hitch.append(.space)
-                hitch.append(.space)
-                hitch.append(.space)
+                hitch.append("    ")
             }
         }
         
         switch internalType {
         case .null:
-            hitch.append(.n)
-            hitch.append(.u)
-            hitch.append(.l)
-            hitch.append(.l)
+            hitch.append("null")
         case .boolean:
             if valueInt != 0 {
-                hitch.append(.t)
-                hitch.append(.r)
-                hitch.append(.u)
-                hitch.append(.e)
+                hitch.append("true")
             } else {
-                hitch.append(.f)
-                hitch.append(.a)
-                hitch.append(.l)
-                hitch.append(.s)
-                hitch.append(.e)
+                hitch.append("false")
             }
         case .string:
             hitch.append(.doubleQuote)
