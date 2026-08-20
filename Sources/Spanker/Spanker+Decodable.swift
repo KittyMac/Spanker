@@ -2,6 +2,7 @@ import Foundation
 import Hitch
 
 public enum SpankerDecodingError: Error, CustomStringConvertible {
+    case typeParseFailed(String)
     case typeMismatch(expected: String, found: JsonType, path: String)
     case keyNotFound(key: String, path: String)
     case valueNotFound(type: String, path: String)
@@ -9,6 +10,8 @@ public enum SpankerDecodingError: Error, CustomStringConvertible {
 
     public var description: String {
         switch self {
+        case .typeParseFailed(let value):
+            return value
         case .typeMismatch(let expected, let found, let path):
             return "expected \(expected) but found \(found) at \(path.isEmpty ? "<root>" : path)"
         case .keyNotFound(let key, let path):
@@ -31,32 +34,32 @@ public extension JsonElement {
 public extension Spanker {
     /// Parse and decode in one step. The decode happens inside the parse closure, so
     /// the returned value is fully materialised and safe to keep.
-    static func decoded<T: Decodable>(hitch: Hitch) -> T? {
-        return hitch.parsed { element in
-            guard let element = element else { return nil }
-            return try? element.decoded()
+    static func decoded<T: Decodable>(hitch: Hitch) throws -> T {
+        guard let element = Spanker.parse(hitch: hitch) else {
+            throw SpankerDecodingError.typeParseFailed("Spanker.decoded failed to parse json")
         }
+        return try element.decoded()
     }
 
-    static func decoded<T: Decodable>(halfhitch: HalfHitch) -> T? {
-        return Spanker.parsed(halfhitch: halfhitch) { element in
-            guard let element = element else { return nil }
-            return try? element.decoded()
+    static func decoded<T: Decodable>(halfhitch: HalfHitch) throws -> T {
+        guard let element = Spanker.parse(halfhitch: halfhitch) else {
+            throw SpankerDecodingError.typeParseFailed("Spanker.decoded failed to parse json")
         }
+        return try element.decoded()
     }
 
-    static func decoded<T: Decodable>(data: Data) -> T? {
-        return data.parsed { element in
-            guard let element = element else { return nil }
-            return try? element.decoded()
+    static func decoded<T: Decodable>(data: Data) throws -> T {
+        guard let element = Spanker.parse(data: data) else {
+            throw SpankerDecodingError.typeParseFailed("Spanker.decoded failed to parse json")
         }
+        return try element.decoded()
     }
 
-    static func decoded<T: Decodable>(string: String) -> T? {
-        return string.parsed { element in
-            guard let element = element else { return nil }
-            return try? element.decoded()
+    static func decoded<T: Decodable>(string: String) throws -> T {
+        guard let element = Spanker.parse(string: string) else {
+            throw SpankerDecodingError.typeParseFailed("Spanker.decoded failed to parse json")
         }
+        return try element.decoded()
     }
 }
 

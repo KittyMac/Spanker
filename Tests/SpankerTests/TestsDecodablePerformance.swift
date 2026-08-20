@@ -108,7 +108,7 @@ class SpankerTestsDecodablePerformance: TestsBase {
         guard let viaFoundation = try? JSONDecoder().decode(PerfPayload.self, from: small) else {
             return XCTFail("JSONDecoder failed on the fixture")
         }
-        guard let viaSpanker: PerfPayload = Spanker.decoded(data: small) else {
+        guard let viaSpanker: PerfPayload = try? Spanker.decoded(data: small) else {
             return XCTFail("Spanker.decoded returned nil")
         }
 
@@ -123,7 +123,7 @@ class SpankerTestsDecodablePerformance: TestsBase {
 
     func test_decoder_reports_errors() {
         let malformed = Hitch(string: #"{"version": 3, "items": "not an array"}"#)
-        let decoded: PerfPayload? = Spanker.decoded(hitch: malformed)
+        let decoded: PerfPayload? = try? Spanker.decoded(hitch: malformed)
         XCTAssertNil(decoded)
 
         // The throwing entry point should say which path failed.
@@ -143,6 +143,7 @@ class SpankerTestsDecodablePerformance: TestsBase {
     // MARK: - CPU
 
     func test_cpu_jsondecoder() {
+        // measured [Time, seconds] average: 0.405, relative standard deviation: 1.110%, values: [0.415703, 0.409285, 0.404863, 0.402067, 0.404659, 0.401326, 0.401121, 0.400774, 0.401382, 0.406148]
         measure {
             for _ in 0..<10 {
                 let decoded = try? JSONDecoder().decode(PerfPayload.self, from: payload)
@@ -152,10 +153,10 @@ class SpankerTestsDecodablePerformance: TestsBase {
     }
 
     func test_cpu_spanker_decoded() {
-        // measured [Time, seconds] average: 0.303, relative standard deviation: 1.964%, values: [0.309249, 0.302061, 0.298827, 0.309352, 0.308910, 0.310105, 0.304590, 0.296890, 0.295978, 0.293947]
+        // measured [Time, seconds] average: 0.812, relative standard deviation: 0.713%, values: [0.827393, 0.814264, 0.810159, 0.806815, 0.813177, 0.813115, 0.812573, 0.807328, 0.806168, 0.809847]
         measure {
             for _ in 0..<10 {
-                let decoded: PerfPayload? = Spanker.decoded(data: payload)
+                let decoded: PerfPayload? = try? Spanker.decoded(data: payload)
                 XCTAssertEqual(decoded?.items.count, Self.itemCount)
             }
         }
@@ -164,7 +165,6 @@ class SpankerTestsDecodablePerformance: TestsBase {
     // Isolates the decode step from the parse step, so a slow result can be
     // attributed to one or the other rather than to "Spanker".
     func test_cpu_spanker_parse_only() {
-        // measured [Time, seconds] average: 0.158, relative standard deviation: 1.879%, values: [0.160198, 0.161627, 0.160466, 0.153924, 0.155968, 0.154817, 0.159460, 0.162302, 0.154836, 0.156416]
         measure {
             for _ in 0..<10 {
                 payload.parsed { element in
@@ -202,7 +202,7 @@ class SpankerTestsDecodablePerformance: TestsBase {
     func test_memory_spanker_decoded() {
         // [memory] Spanker.decoded: current 140 -> 175 MB (delta 35 MB), peak 153 -> 191 MB
         reportMemory("Spanker.decoded") {
-            let decoded: PerfPayload? = Spanker.decoded(data: self.payload)
+            let decoded: PerfPayload? = try? Spanker.decoded(data: self.payload)
             XCTAssertEqual(decoded?.items.count, Self.itemCount)
         }
     }
