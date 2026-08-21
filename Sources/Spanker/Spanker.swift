@@ -288,9 +288,7 @@ extension JsonElementableDictionary: JsonElementable {
 
 // MARK: - JsonElement
 
-// Note: this is 112 bytes according to the profiler
-// Note: this is 96 bytes according to the profiler
-// Note: this is 80 bytes according to the profiler
+// Note: this is 160 bytes according to the profiler
 public final class JsonElement: CustomStringConvertible, Equatable {
 
     public struct WalkingIterator: Sequence, IteratorProtocol {
@@ -892,7 +890,6 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     init(array: [JsonElement]) {
         internalType = .array
         valueArray = array
-        valueArray.reserveCapacity(32)
     }
 
     
@@ -901,9 +898,7 @@ public final class JsonElement: CustomStringConvertible, Equatable {
         internalType = .dictionary
 
         keyArray = keys
-        keyArray.reserveCapacity(32)
         valueArray = values
-        valueArray.reserveCapacity(32)
     }
 
     @discardableResult
