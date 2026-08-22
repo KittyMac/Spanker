@@ -807,6 +807,11 @@ class SpankerTests: TestsBase {
             XCTAssertEqual(result?.intValue, 3)
         }
     }
+    
+    func test_memoryUsage() {
+        XCTAssertEqual(class_getInstanceSize(JsonElement.self), 96)
+        XCTAssertEqual(MemoryLayout<HalfHitch>.size, 40)
+    }
 }
 
 
