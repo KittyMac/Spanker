@@ -839,10 +839,46 @@ public final class JsonElement: CustomStringConvertible, Equatable {
     }
 
 
+    internal static let keyIndexThreshold = 64
+    internal var keyIndex: [Int: [Int]]?
+
     internal func set(key: HalfHitch,
                       element: JsonElement) {
         guard internalType == .dictionary else { return }
-        if let index = keyArray.firstIndex(of: key) {
+        let keyHash = key.hashValue
+
+        if keyIndex == nil && keyArray.count >= JsonElement.keyIndexThreshold {
+            var index = [Int: [Int]](minimumCapacity: keyArray.count * 2)
+            for idx in 0..<keyArray.count {
+                index[keyArray[idx].hashValue, default: []].append(idx)
+            }
+            keyIndex = index
+        }
+
+        if keyIndex != nil {
+            if let candidates = keyIndex?[keyHash] {
+                for idx in candidates where keyArray[idx] == key {
+                    keyArray[idx] = key
+                    valueArray[idx] = element
+                    return
+                }
+            }
+            keyIndex?[keyHash, default: []].append(keyArray.count)
+            keyArray.append(key)
+            valueArray.append(element)
+            return
+        }
+
+        var index = -1
+        keyArray.withUnsafeBufferPointer { buffer in
+            for idx in 0..<buffer.count where buffer[idx].hashValue == keyHash {
+                if buffer[idx] == key {
+                    index = idx
+                    break
+                }
+            }
+        }
+        if index >= 0 {
             keyArray[index] = key
             valueArray[index] = element
         } else {

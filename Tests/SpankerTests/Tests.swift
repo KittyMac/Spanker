@@ -809,7 +809,11 @@ class SpankerTests: TestsBase {
     }
     
     func test_memoryUsage() {
-        XCTAssertEqual(class_getInstanceSize(JsonElement.self), 96)
+        let json = Hitch(contentsOfFile: "/private/tmp/wildfire/681/wildfire.96E247D5-E15C-466E-BFFB-88414DD61546.rover.json")!
+        json.parsed { root in
+            print("here")
+        }
+        XCTAssertEqual(class_getInstanceSize(JsonElement.self), 104)
         XCTAssertEqual(MemoryLayout<HalfHitch>.size, 40)
     }
 }
